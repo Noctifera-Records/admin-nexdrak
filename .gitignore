@@ -1,0 +1,69 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+#/sql
+
+# next.js
+/.next/
+/out/
+/.open-next/
+/.wrangler/
+
+# production
+/build
+/admin-app/
+build/bin
+build/other_templetes
+example_images
+frontend/node_modules
+dist
+test
+tests
+dist-ssr
+Docs
+1Docs
+*.local
+/docs
+# Temporary and testing files
+/temp/
+temp-*
+test-*
+temp_*
+test_*
+#*.sql
+# /sql already ignored above, but adding sql pattern for safety
+
+#env files
+.env*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Logs
+logs
+*.log
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.bolt
+.gemini
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+#AGENTS.md
+.agents
+skills-lock.json
