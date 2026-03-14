@@ -11,7 +11,8 @@ const config: OpenNextConfig = {
       queue: "dummy",
     },
   },
-  edgeExternals: ["node:crypto", "node:events", "node:util"],
+  // Inclusión forzada de librerías para Better Auth y Drizzle
+  edgeExternals: ["node:crypto", "node:util", "node:events", "node:buffer"],
   middleware: {
     external: true,
     override: {

@@ -2,7 +2,7 @@
 
 # dependencies
 /node_modules
-/sql
+#/sql
 
 # next.js
 /.next/
@@ -31,7 +31,7 @@ temp-*
 test-*
 temp_*
 test_*
-*.sql
+#*.sql
  /sql already ignored above, but adding sql pattern for safety
 
 #env files
@@ -64,6 +64,6 @@ logs
 *.njsproj
 *.sln
 *.sw?
-AGENTS.md
+#AGENTS.md
 .agents
 skills-lock.json
