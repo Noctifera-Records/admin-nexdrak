@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:ci": "opennextjs-cloudflare build",
-    "build:cf": "opennextjs-cloudflare build",
+    "build:cf": "opennextjs-cloudflare build && mv .open-next/worker.js .open-next/_worker.js",
     "deploy:cf": "npm run build:cf && npx wrangler pages deploy .open-next --project-name nexdrak-admin",
     "start": "next start",
     "lint": "next lint"
