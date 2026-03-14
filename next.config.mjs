@@ -7,9 +7,6 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   output: "standalone",
-  turbopack: {
-    root: __dirname,
-  },
   images: {
     unoptimized: true,
     formats: ["image/webp", "image/avif"],
