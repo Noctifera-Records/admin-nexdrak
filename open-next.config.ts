@@ -24,8 +24,6 @@ const config: OpenNextConfig = {
       queue: "dummy",
     },
   },
-  // Usar solo nodejs_compat_v2 (no ambos)
-  compatibilityFlags: ["nodejs_compat_v2"],
 };
 
 export default config;
