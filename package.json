@@ -7,7 +7,7 @@
     "build": "next build",
     "build:ci": "opennextjs-cloudflare build",
     "build:cf": "opennextjs-cloudflare build",
-    "deploy:cf": "npm run build:cf && wrangler pages publish .open-next/assets --project-name nexdrak-admin",
+    "deploy:cf": "npm run build:cf && npx wrangler pages deploy .open-next --project-name nexdrak-admin",
     "start": "next start",
     "lint": "next lint"
   },
