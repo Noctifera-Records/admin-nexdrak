@@ -1,11 +1,5 @@
-import { Client, neonConfig } from '@neondatabase/serverless';
+import { Client } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from 'ws';
-
-// Required for compatibility with Supabase/Postgres over WebSockets in some environments
-if (typeof window === 'undefined') {
-  neonConfig.webSocketConstructor = ws;
-}
 
 function getConnectionString() {
   const connectionString = process.env.DATABASE_URL;
@@ -15,16 +9,22 @@ function getConnectionString() {
   return connectionString;
 }
 
+/**
+ * getDb initializes a new database connection for Drizzle.
+ * In a serverless environment like Cloudflare Workers, 
+ * we create a new client to ensure connections are correctly managed.
+ */
 export function getDb() {
-  const client = new Client(getConnectionString());
-  // neon-serverless connection
+  const connectionString = getConnectionString();
+  const client = new Client(connectionString);
   return drizzle(client);
 }
 
-// Legacy compatibility
+// Legacy compatibility for direct SQL queries
 export const db = {
   query: async (sqlText: string, params?: unknown[]) => {
-    const client = new Client(getConnectionString());
+    const connectionString = getConnectionString();
+    const client = new Client(connectionString);
     try {
       await client.connect();
       const result = await client.query(sqlText, params || []);
@@ -33,7 +33,12 @@ export const db = {
       console.error('Database query error:', error);
       throw error;
     } finally {
-      await client.end();
+      // Very important: closing the connection prevents the worker from hanging
+      try {
+        await client.end();
+      } catch (e) {
+        // Ignore end errors
+      }
     }
   },
 };
