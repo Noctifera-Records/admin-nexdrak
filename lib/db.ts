@@ -1,6 +1,10 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
 
+/**
+ * Usamos neon-http que es el driver más ligero y compatible con Cloudflare Pages.
+ * Para que funcione con Supabase, es vital usar la URL de conexión correcta.
+ */
 function getConnectionString() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
@@ -9,42 +13,22 @@ function getConnectionString() {
   return connectionString;
 }
 
-/**
- * getDb initializes a new database connection for Drizzle using node-postgres.
- * This is the most stable way for Cloudflare + Supabase when nodejs_compat is enabled.
- */
 export function getDb() {
-  const connectionString = getConnectionString();
-  const pool = new pg.Pool({
-    connectionString,
-    max: 1,
-    ssl: {
-      rejectUnauthorized: false,
-    },
-  });
-  return drizzle(pool);
+  // neon-http usa fetch() nativo de Cloudflare, evitando errores de módulos "pg" o "ws"
+  const sql = neon(getConnectionString());
+  return drizzle(sql);
 }
 
-// Legacy compatibility for direct SQL queries
+// Legacy compatibility
 export const db = {
   query: async (sqlText: string, params?: unknown[]) => {
-    const connectionString = getConnectionString();
-    const pool = new pg.Pool({
-      connectionString,
-      max: 1,
-      ssl: {
-        rejectUnauthorized: false,
-      },
-    });
     try {
-      const result = await pool.query(sqlText, params || []);
+      const sql = neon(getConnectionString(), { fullResults: true });
+      const result = await sql.query(sqlText, params || []);
       return { rows: result.rows };
     } catch (error) {
       console.error('Database query error:', error);
       throw error;
-    } finally {
-      // Must end pool to release worker resource
-      await pool.end();
     }
   },
 };
