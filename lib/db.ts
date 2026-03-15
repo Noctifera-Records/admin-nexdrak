@@ -1,7 +1,7 @@
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 
-// Critical for Cloudflare Workers/Pages to maintain stable WebSocket connections
+// Critical for Cloudflare Workers/Pages
 neonConfig.fetchConnectionCache = true;
 
 function getConnectionString() {
@@ -13,17 +13,16 @@ function getConnectionString() {
 }
 
 /**
- * Reusable pool instance.
- * In Cloudflare Workers, this might be reset between isolates.
+ * getDb initializes a database connection.
+ * In Cloudflare Workers, we avoid using a global pool variable to prevent
+ * "Cannot perform I/O on behalf of a different request" errors.
  */
-let pool: Pool | null = null;
-
 export function getDb() {
   const connectionString = getConnectionString();
   
-  if (!pool) {
-    pool = new Pool({ connectionString });
-  }
+  // Create a new pool/client per request context.
+  // Cloudflare and Neon handle the underlying TCP/WebSocket efficiently.
+  const pool = new Pool({ connectionString });
   
   return drizzle(pool);
 }
@@ -40,7 +39,7 @@ export const db = {
       console.error('Database query error:', error);
       throw error;
     } finally {
-      // Must end pool to release worker resource
+      // Must end pool to release worker resource immediately
       await tempPool.end().catch(() => {});
     }
   },
