@@ -1,8 +1,11 @@
 import { neon, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 
-// Enable connection pooling for serverless environments
-neonConfig.fetchConnectionCache = true;
+// Force neon to use only fetch (HTTP) and disable websocket attempts for Supabase compatibility on Cloudflare.
+// This is critical when using Supabase Transaction Pooler (6543)
+if (typeof window === 'undefined') {
+  neonConfig.fetchConnectionCache = true;
+}
 
 function getConnectionString() {
   const connectionString = process.env.DATABASE_URL;
