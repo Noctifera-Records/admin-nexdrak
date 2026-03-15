@@ -18,6 +18,7 @@ export const auth = (() => {
     const db = getDb();
     
     return betterAuth({
+      baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_BETTER_AUTH_URL,
       database: drizzleAdapter(db, {
         provider: "pg", // Use 'pg' for postgres dialect
         schema,
