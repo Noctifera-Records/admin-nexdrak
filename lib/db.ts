@@ -1,10 +1,6 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
-/**
- * Usamos neon-http que es el driver más ligero y compatible con Cloudflare Pages.
- * Para que funcione con Supabase, es vital usar la URL de conexión correcta.
- */
 function getConnectionString() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
@@ -13,22 +9,38 @@ function getConnectionString() {
   return connectionString;
 }
 
+/**
+ * getDb initializes a new database connection for Drizzle using postgres.js.
+ * This is the recommended way for Cloudflare Workers + Supabase/Postgres
+ * because it handles the edge environment efficiently.
+ */
 export function getDb() {
-  // neon-http usa fetch() nativo de Cloudflare, evitando errores de módulos "pg" o "ws"
-  const sql = neon(getConnectionString());
-  return drizzle(sql);
+  const connectionString = getConnectionString();
+  
+  // Initialize postgres.js client
+  const queryClient = postgres(connectionString, {
+    ssl: 'require',
+    prepare: false, // Required for Supabase connection pooling (Transaction mode)
+    connect_timeout: 10,
+  });
+  
+  return drizzle(queryClient);
 }
 
-// Legacy compatibility
+// Legacy compatibility for direct SQL queries
 export const db = {
   query: async (sqlText: string, params?: unknown[]) => {
+    const connectionString = getConnectionString();
+    const sql = postgres(connectionString, { ssl: 'require', prepare: false });
     try {
-      const sql = neon(getConnectionString(), { fullResults: true });
-      const result = await sql.query(sqlText, params || []);
-      return { rows: result.rows };
+      const result = await sql.unsafe(sqlText, params || []);
+      return { rows: result };
     } catch (error) {
       console.error('Database query error:', error);
       throw error;
+    } finally {
+      // Close connection
+      await sql.end();
     }
   },
 };
