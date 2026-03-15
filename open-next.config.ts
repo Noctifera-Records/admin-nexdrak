@@ -11,8 +11,10 @@ const config: OpenNextConfig = {
       queue: "dummy",
     },
   },
-  // Añadimos net y tls para soporte TCP nativo en Cloudflare
-  edgeExternals: ["node:crypto", "node:util", "node:events", "node:buffer", "node:net", "node:tls"],
+  // We include essential node built-ins for better-auth and drizzle
+  // Note: we don't include node:net or node:tls if we are using neon-serverless (WebSocket)
+  // as it avoids "Module not found" if Cloudflare doesn't support them in the requested compatibility date.
+  edgeExternals: ["node:crypto", "node:util", "node:events", "node:buffer"],
   middleware: {
     external: true,
     override: {

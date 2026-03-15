@@ -1,11 +1,11 @@
 'use server';
 
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 
 export async function getAdminStats() {
-    const session = await auth.api.getSession({
+    const session = await getAuth().api.getSession({
         headers: await headers()
     });
 
@@ -27,7 +27,7 @@ export async function getAdminStats() {
             db.query('SELECT COUNT(*) FROM merch'),
             db.query('SELECT COUNT(*) FROM downloads'),
             db.query('SELECT COUNT(*) FROM events'),
-            db.query('SELECT COUNT(*) FROM releases') // Assuming releases table exists or similar logic
+            db.query('SELECT COUNT(*) FROM releases')
         ]);
 
         return {

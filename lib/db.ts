@@ -1,5 +1,8 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+
+// Critical for Cloudflare Workers/Pages to maintain stable WebSocket connections
+neonConfig.fetchConnectionCache = true;
 
 function getConnectionString() {
   const connectionString = process.env.DATABASE_URL;
@@ -10,37 +13,35 @@ function getConnectionString() {
 }
 
 /**
- * getDb initializes a new database connection for Drizzle using postgres.js.
- * This is the recommended way for Cloudflare Workers + Supabase/Postgres
- * because it handles the edge environment efficiently.
+ * Reusable pool instance.
+ * In Cloudflare Workers, this might be reset between isolates.
  */
+let pool: Pool | null = null;
+
 export function getDb() {
   const connectionString = getConnectionString();
   
-  // Initialize postgres.js client
-  const queryClient = postgres(connectionString, {
-    ssl: 'require',
-    prepare: false, // Required for Supabase connection pooling (Transaction mode)
-    connect_timeout: 10,
-  });
+  if (!pool) {
+    pool = new Pool({ connectionString });
+  }
   
-  return drizzle(queryClient);
+  return drizzle(pool);
 }
 
 // Legacy compatibility for direct SQL queries
 export const db = {
   query: async (sqlText: string, params?: unknown[]) => {
     const connectionString = getConnectionString();
-    const sql = postgres(connectionString, { ssl: 'require', prepare: false });
+    const tempPool = new Pool({ connectionString });
     try {
-      const result = await sql.unsafe(sqlText, params || []);
-      return { rows: result };
+      const result = await tempPool.query(sqlText, params || []);
+      return { rows: result.rows };
     } catch (error) {
       console.error('Database query error:', error);
       throw error;
     } finally {
-      // Close connection
-      await sql.end();
+      // Must end pool to release worker resource
+      await tempPool.end().catch(() => {});
     }
   },
 };
