@@ -1,5 +1,5 @@
-import { Client } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import pg from 'pg';
 
 function getConnectionString() {
   const connectionString = process.env.DATABASE_URL;
@@ -10,35 +10,41 @@ function getConnectionString() {
 }
 
 /**
- * getDb initializes a new database connection for Drizzle.
- * In a serverless environment like Cloudflare Workers, 
- * we create a new client to ensure connections are correctly managed.
+ * getDb initializes a new database connection for Drizzle using node-postgres.
+ * This is the most stable way for Cloudflare + Supabase when nodejs_compat is enabled.
  */
 export function getDb() {
   const connectionString = getConnectionString();
-  const client = new Client(connectionString);
-  return drizzle(client);
+  const pool = new pg.Pool({
+    connectionString,
+    max: 1,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  });
+  return drizzle(pool);
 }
 
 // Legacy compatibility for direct SQL queries
 export const db = {
   query: async (sqlText: string, params?: unknown[]) => {
     const connectionString = getConnectionString();
-    const client = new Client(connectionString);
+    const pool = new pg.Pool({
+      connectionString,
+      max: 1,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    });
     try {
-      await client.connect();
-      const result = await client.query(sqlText, params || []);
+      const result = await pool.query(sqlText, params || []);
       return { rows: result.rows };
     } catch (error) {
       console.error('Database query error:', error);
       throw error;
     } finally {
-      // Very important: closing the connection prevents the worker from hanging
-      try {
-        await client.end();
-      } catch (e) {
-        // Ignore end errors
-      }
+      // Must end pool to release worker resource
+      await pool.end();
     }
   },
 };

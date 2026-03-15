@@ -11,8 +11,8 @@ const config: OpenNextConfig = {
       queue: "dummy",
     },
   },
-  // Inclusión forzada de librerías para Better Auth y Drizzle
-  edgeExternals: ["node:crypto", "node:util", "node:events", "node:buffer"],
+  // Añadimos net y tls para soporte TCP nativo en Cloudflare
+  edgeExternals: ["node:crypto", "node:util", "node:events", "node:buffer", "node:net", "node:tls"],
   middleware: {
     external: true,
     override: {
