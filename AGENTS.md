@@ -41,8 +41,8 @@ This repository is the **admin panel** for NexDrak and is designed as a **separa
 - `open-next.config.ts` (externalize node internals + pgDrivers)
 - `wrangler.toml` configured for Pages output
 - `package.json` includes:
-  - `build:cf` -> `opennextjs-cloudflare build`
-  - `deploy:cf` -> `wrangler pages publish .open-next/assets --project-name nexdrak-admin`
+  - `build:cf` -> `opennextjs-cloudflare build && node scripts/fix-statics.js`
+  - `deploy:cf` -> `npx wrangler pages deploy .open-next --project-name nexdrak-admin`
 
 ### env variables
 - `DATABASE_URL` (Neon/Postgres)
