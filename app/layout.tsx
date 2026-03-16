@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   title: "NexDrak Admin",
   description: "Dashboard de administración de NexDrak",
   robots: "noindex, nofollow",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  }
 };
 
 export const viewport: Viewport = {

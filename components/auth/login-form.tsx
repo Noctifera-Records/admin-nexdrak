@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
@@ -26,9 +26,15 @@ export default function LoginForm() {
         password,
       },
       {
-        onSuccess: () => {
-          toast.success("Successfully logged in");
-          router.push("/admin");
+        onSuccess: (ctx) => {
+          // Check if MFA is required
+          if (ctx.data?.twoFactorRedirect) {
+            toast.info("Two-factor authentication required");
+            router.push("/login/mfa");
+          } else {
+            toast.success("Successfully logged in");
+            router.push("/admin");
+          }
         },
         onError: (ctx) => {
           toast.error(ctx.error?.message || "Failed to login");
@@ -78,4 +84,3 @@ export default function LoginForm() {
     </div>
   );
 }
-

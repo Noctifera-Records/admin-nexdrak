@@ -125,7 +125,7 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
       // Encontrar la canción actual para preservar campos requeridos
       const currentSong = songs.find((song) => song.id === songId);
       if (!currentSong) {
-        throw new Error("Canción no encontrada");
+        throw new Error("Song not found");
       }
 
       // Validar y normalizar el tipo
@@ -137,10 +137,10 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
         type: validatedType,
       };
 
-      console.log('Canción actual:', currentSong);
-      console.log('Updates recibidos:', updates);
-      console.log('Datos finales para actualizar:', updateData);
-      console.log('Tipo final:', updateData.type, typeof updateData.type);
+      console.log('Song not found:', currentSong);
+      console.log('Updates received:', updates);
+      console.log('Final data for update:', updateData);
+      console.log('Final type:', updateData.type, typeof updateData.type);
 
       const { error } = await supabase
         .from("songs")
@@ -163,7 +163,7 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
     } catch (error) {
       console.error("Error updating song:", error);
       const errorMessage =
-        error instanceof Error ? error.message : "Error al actualizar canción";
+        error instanceof Error ? error.message : "Error updating song";
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -181,7 +181,7 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
       router.refresh();
     } catch (error) {
       console.error("Error deleting song:", error);
-      alert("Error al eliminar canción");
+      alert("Error deleting song");
     } finally {
       setLoading(false);
     }
@@ -213,14 +213,14 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
           <DialogTrigger asChild>
             <Button className="bg-white text-black hover:bg-gray-200">
               <Plus className="h-4 w-4 mr-2" />
-              Agregar Canción
+              Add Song
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-card border-border max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-foreground">Nueva Canción</DialogTitle>
+              <DialogTitle className="text-foreground">New Song</DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                Agrega una nueva canción a tu catálogo
+                Add a new song to your catalog
               </DialogDescription>
             </DialogHeader>
             <SongForm onSave={handleAddSong} loading={loading} />
@@ -264,7 +264,7 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
                     rel="noopener noreferrer"
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
-                    ESCUCHAR
+                    Stream
                   </a>
                 </Button>
               </div>
@@ -303,10 +303,10 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
                   <DialogContent className="bg-card border-border max-w-2xl">
                     <DialogHeader>
                       <DialogTitle className="text-foreground">
-                        Editar Canción
+                        Edit Song
                       </DialogTitle>
                       <DialogDescription className="text-muted-foreground">
-                        Modifica la información de la canción
+                        Modify the song information
                       </DialogDescription>
                     </DialogHeader>
                     {editingSong && (
@@ -334,11 +334,11 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
                   <DialogContent className="bg-card border-border">
                     <DialogHeader>
                       <DialogTitle className="text-foreground">
-                        Eliminar Canción
+                        Delete Song
                       </DialogTitle>
                       <DialogDescription className="text-muted-foreground">
-                        ¿Estás seguro de que quieres eliminar "{song.title}"?
-                        Esta acción no se puede deshacer.
+                        Are you sure you want to delete "{song.title}"?
+                        This action cannot be undone.
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -346,14 +346,14 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
                         variant="outline"
                         className="border-input text-foreground"
                       >
-                        Cancelar
+                        Cancel
                       </Button>
                       <Button
                         variant="destructive"
                         onClick={() => handleDeleteSong(song.id)}
                         disabled={loading}
                       >
-                        {loading ? "Eliminando..." : "Eliminar"}
+                        {loading ? "Deleting..." : "Delete"}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -368,10 +368,10 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
         <div className="text-center py-12">
           <Music className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground text-lg mb-2">
-            {searchTerm ? "No se encontraron canciones" : "No hay canciones"}
+            {searchTerm ? "No songs found" : "No songs available"}
           </p>
           <p className="text-muted-foreground/80 text-sm">
-            {!searchTerm && "Agrega tu primera canción para comenzar"}
+            {!searchTerm && "Add your first song to get started"}
           </p>
         </div>
       )}
@@ -425,7 +425,7 @@ function SongForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="title" className="text-foreground">
-            Título de la Canción *
+            Song Title *
           </Label>
           <Input
             id="title"
@@ -453,7 +453,7 @@ function SongForm({
 
       <div>
         <Label htmlFor="streamUrl" className="text-foreground">
-          URL de Streaming *
+          Streaming URL *
         </Label>
         <Input
           id="streamUrl"
@@ -488,28 +488,28 @@ function SongForm({
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground mt-1">
-          Valor actual: {type} (tipo: {typeof type})
+          Current value: {type} (type: {typeof type})
         </p>
       </div>
 
       {type === "album" && (
         <div>
           <Label htmlFor="albumName" className="text-foreground">
-            Nombre del Álbum
+            Album Name
           </Label>
           <Input
             id="albumName"
             value={albumName}
             onChange={(e) => setAlbumName(e.target.value)}
             className="bg-background border-input text-foreground"
-            placeholder="Nombre del álbum"
+            placeholder="Album Name"
           />
         </div>
       )}
 
       <div>
         <Label htmlFor="releaseDate" className="text-foreground">
-          Fecha de Lanzamiento
+          Release Date
         </Label>
         <Input
           id="releaseDate"
@@ -521,7 +521,7 @@ function SongForm({
       </div>
 
       <div>
-        <Label className="text-foreground">Imagen de Portada</Label>
+        <Label className="text-foreground">Cover Image</Label>
         <div className="space-y-3">
           <ImageUpload
             value={coverImageUrl}
@@ -530,7 +530,7 @@ function SongForm({
             maxSizeMB={3}
           />
           <div className="text-xs text-muted-foreground">
-            O ingresa una URL directamente:
+            Or enter a URL directly:
           </div>
           <Input
             value={coverImageUrl}
@@ -547,7 +547,7 @@ function SongForm({
           disabled={loading || !title || !streamUrl}
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
-          {loading ? "Guardando..." : song ? "Actualizar" : "Crear"}
+          {loading ? "Saving..." : song ? "Update" : "Create"}
         </Button>
       </DialogFooter>
     </form>

@@ -1,12 +1,12 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 export async function getUsers() {
-  const session = await auth.api.getSession({
+  const session = await getAuth().api.getSession({
     headers: await headers()
   });
 
@@ -15,18 +15,18 @@ export async function getUsers() {
   }
 
   // Fetch users from Better Auth 'user' table
-  // Note: Better Auth uses camelCase for column names by default (createdAt, emailVerified, updatedAt)
+  // Columns match backup.sql: created_at, email_verified
   const res = await db.query(`
-    SELECT id, email, name as username, role, "createdAt" as created_at, "emailVerified" as email_confirmed_at 
+    SELECT id, email, name as username, role, created_at, email_verified as email_confirmed_at 
     FROM "user"
-    ORDER BY "createdAt" DESC
+    ORDER BY created_at DESC
   `);
 
   return res.rows;
 }
 
 export async function updateUserProfile(userId: string, updates: { role?: string, username?: string }) {
-  const session = await auth.api.getSession({
+  const session = await getAuth().api.getSession({
     headers: await headers()
   });
 
@@ -57,7 +57,7 @@ export async function updateUserProfile(userId: string, updates: { role?: string
 
     await db.query(`
       UPDATE "user"
-      SET ${fields.join(", ")}, "updatedAt" = NOW()
+      SET ${fields.join(", ")}, updated_at = NOW()
       WHERE id = $${paramIndex}
     `, values);
 
@@ -70,7 +70,7 @@ export async function updateUserProfile(userId: string, updates: { role?: string
 }
 
 export async function deleteUser(userId: string) {
-  const session = await auth.api.getSession({
+  const session = await getAuth().api.getSession({
     headers: await headers()
   });
 

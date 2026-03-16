@@ -14,30 +14,32 @@ export async function getAdminStats() {
     }
 
     try {
-        const [
-            usersCount,
-            songsCount,
-            merchCount,
-            downloadsCount,
-            eventsCount,
-            releasesCount
-        ] = await Promise.all([
-            db.query('SELECT COUNT(*) FROM "user"'),
-            db.query('SELECT COUNT(*) FROM songs'),
-            db.query('SELECT COUNT(*) FROM merch'),
-            db.query('SELECT COUNT(*) FROM downloads'),
-            db.query('SELECT COUNT(*) FROM events'),
-            db.query('SELECT COUNT(*) FROM releases')
-        ]);
+        return await db.withConnection(async (client) => {
+            const [
+                usersCount,
+                songsCount,
+                merchCount,
+                downloadsCount,
+                eventsCount,
+                releasesCount
+            ] = await Promise.all([
+                client.query('SELECT COUNT(*) FROM "user"'),
+                client.query('SELECT COUNT(*) FROM songs'),
+                client.query('SELECT COUNT(*) FROM merch'),
+                client.query('SELECT COUNT(*) FROM downloads'),
+                client.query('SELECT COUNT(*) FROM events'),
+                client.query('SELECT COUNT(*) FROM releases')
+            ]);
 
-        return {
-            users: parseInt(usersCount.rows[0].count),
-            songs: parseInt(songsCount.rows[0].count),
-            merch: parseInt(merchCount.rows[0].count),
-            downloads: parseInt(downloadsCount.rows[0].count),
-            events: parseInt(eventsCount.rows[0].count),
-            releases: parseInt(releasesCount.rows[0].count)
-        };
+            return {
+                users: parseInt(usersCount.rows[0].count),
+                songs: parseInt(songsCount.rows[0].count),
+                merch: parseInt(merchCount.rows[0].count),
+                downloads: parseInt(downloadsCount.rows[0].count),
+                events: parseInt(eventsCount.rows[0].count),
+                releases: parseInt(releasesCount.rows[0].count)
+            };
+        });
     } catch (error) {
         console.error("Error fetching admin stats:", error);
         throw new Error("Failed to fetch stats");

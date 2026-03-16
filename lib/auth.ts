@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { admin } from "better-auth/plugins";
+import { admin, twoFactor } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { Resend } from "resend";
 import { getDb } from "./db";
@@ -19,9 +19,6 @@ let _auth: any = null;
 
 /**
  * Lazy initialization of Better Auth.
- * In Cloudflare Workers, environment variables are available via process.env 
- * during the request due to the shim, but it's safest to initialize within 
- * the request flow or via a getter.
  */
 export function getAuth() {
   if (_auth) return _auth;
@@ -29,7 +26,6 @@ export function getAuth() {
   const db = getDb();
   
   _auth = betterAuth({
-    // Explicitly pass baseURL and secret from environment
     baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_BETTER_AUTH_URL,
     secret: process.env.BETTER_AUTH_SECRET,
     database: drizzleAdapter(db, {
@@ -65,6 +61,11 @@ export function getAuth() {
     socialProviders: {},
     plugins: [
       admin(),
+      twoFactor({
+        issuer: "NexDrak",
+        // This ensures the user is redirected to MFA challenge after login
+        // if they have it enabled.
+      })
     ],
   });
   

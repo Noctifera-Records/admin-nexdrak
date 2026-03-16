@@ -26,8 +26,8 @@ export default function AdminAdminsPage() {
       setAdmins(adminsList);
     } catch (error: any) {
       console.error('Error fetching admins:', error);
-      setError(error.message || 'Error al cargar administradores');
-      toast.error(error.message || 'Error al cargar administradores');
+      setError(error.message || 'Error fetching administrators');
+      toast.error(error.message || 'Error fetching administrators');
     } finally {
       setLoading(false);
     }
@@ -41,14 +41,14 @@ export default function AdminAdminsPage() {
     setError('');
     try {
       await createAdmin(newAdminEmail, newAdminPassword);
-      toast.success("Administrador agregado exitosamente.");
+      toast.success("Administrator added successfully.");
       setNewAdminEmail("");
       setNewAdminPassword("");
       setIsDialogOpen(false);
       fetchAdmins();
     } catch (error: any) {
       console.error('Error adding admin:', error);
-      const errorMessage = error.message || 'Error al agregar administrador';
+      const errorMessage = error.message || 'Error adding administrator';
       setError(errorMessage);
       toast.error(errorMessage);
     }
@@ -58,7 +58,7 @@ export default function AdminAdminsPage() {
     setError('');
     try {
       await deleteAdmin(adminId);
-      toast.success("Administrador eliminado exitosamente.");
+      toast.success("Administrator successfully removed.");
       fetchAdmins();
     } catch (error: any) {
       console.error('Error deleting admin:', error);

@@ -14,20 +14,19 @@ function getConnectionString() {
 
 /**
  * getDb initializes a database connection.
- * In Cloudflare Workers, we avoid using a global pool variable to prevent
- * "Cannot perform I/O on behalf of a different request" errors.
+ * In Cloudflare Workers, we create a new pool/client per request context.
  */
 export function getDb() {
   const connectionString = getConnectionString();
-  
-  // Create a new pool/client per request context.
-  // Cloudflare and Neon handle the underlying TCP/WebSocket efficiently.
   const pool = new Pool({ connectionString });
-  
   return drizzle(pool);
 }
 
-// Legacy compatibility for direct SQL queries
+/**
+ * Legacy compatibility object for direct SQL queries.
+ * Warning: Standard db.query creates a new connection each time.
+ * For transactions, use the new transaction method.
+ */
 export const db = {
   query: async (sqlText: string, params?: unknown[]) => {
     const connectionString = getConnectionString();
@@ -39,8 +38,21 @@ export const db = {
       console.error('Database query error:', error);
       throw error;
     } finally {
-      // Must end pool to release worker resource immediately
       await tempPool.end().catch(() => {});
     }
   },
+  
+  /**
+   * Executes a callback within a single database connection.
+   * Useful for transactions or multiple related queries.
+   */
+  withConnection: async <T>(callback: (client: Pool) => Promise<T>): Promise<T> => {
+    const connectionString = getConnectionString();
+    const pool = new Pool({ connectionString });
+    try {
+      return await callback(pool);
+    } finally {
+      await pool.end().catch(() => {});
+    }
+  }
 };
