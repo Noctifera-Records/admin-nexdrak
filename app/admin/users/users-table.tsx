@@ -207,7 +207,7 @@ export default function UsersTable({ users: initialUsers }: UsersTableProps) {
                     <div className="flex items-center space-x-2">
                       {getRoleIcon(user.role)}
                       <span className={getRoleBadge(user.role)}>
-                        {user.role.toUpperCase()}
+                        {user.role.toLocaleUpperCase()}
                       </span>
                     </div>
                   </td>

@@ -2,7 +2,7 @@
 
 # dependencies
 /node_modules
-/sql
+#/sql
 
 # next.js
 /.next/
@@ -32,7 +32,7 @@ test-*
 temp_*
 test_*
 *.sql
-# /sql already ignored above, but adding sql pattern for safety
+ /sql already ignored above, but adding sql pattern for safety
 
 #env files
 .env*

@@ -19,6 +19,7 @@ import {
   ExternalLink,
   Music,
   User,
+  Hash,
 } from "lucide-react";
 import {
   Dialog,
@@ -43,6 +44,7 @@ interface Song {
   type: "album" | "single";
   album_name?: string | null;
   release_date?: string | null;
+  track_number?: number | null;
   created_at: string;
 }
 
@@ -137,10 +139,7 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
         type: validatedType,
       };
 
-      console.log('Song not found:', currentSong);
-      console.log('Updates received:', updates);
-      console.log('Final data for update:', updateData);
-      console.log('Final type:', updateData.type, typeof updateData.type);
+      console.log('Song update data:', updateData);
 
       const { error } = await supabase
         .from("songs")
@@ -268,6 +267,14 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
                   </a>
                 </Button>
               </div>
+              
+              {/* Badge de número de pista si es álbum */}
+              {song.type === "album" && song.track_number && (
+                <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded-md text-xs font-bold flex items-center">
+                  <Hash className="h-3 w-3 mr-1" />
+                  Track {song.track_number}
+                </div>
+              )}
             </div>
 
             {/* Información */}
@@ -280,6 +287,11 @@ export default function SongsTable({ songs: initialSongs }: SongsTableProps) {
                   <div className="flex items-center text-sm text-muted-foreground mt-1">
                     <User className="h-3 w-3 mr-1" />
                     {song.artist}
+                  </div>
+                )}
+                {song.album_name && (
+                  <div className="text-xs text-muted-foreground mt-1 italic">
+                    Album: {song.album_name}
                   </div>
                 )}
                 <div className="text-xs text-muted-foreground mt-1">
@@ -396,6 +408,7 @@ function SongForm({
   );
   const [type, setType] = useState<"album" | "single">(song?.type || "single");
   const [albumName, setAlbumName] = useState(song?.album_name || "");
+  const [trackNumber, setTrackNumber] = useState(song?.track_number?.toString() || "");
   const [releaseDate, setReleaseDate] = useState(song?.release_date || "");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -408,11 +421,9 @@ function SongForm({
       cover_image_url: coverImageUrl || null,
       type,
       album_name: type === "album" ? albumName || null : null,
+      track_number: type === "album" ? (parseInt(trackNumber) || null) : null,
       release_date: releaseDate || null,
     };
-    
-    console.log('Datos de canción a enviar:', songData);
-    console.log('Tipo de campo type:', typeof songData.type, songData.type);
     
     onSave(songData);
   };
@@ -475,7 +486,6 @@ function SongForm({
         <Select
           value={type}
           onValueChange={(value: "album" | "single") => {
-            console.log('Cambiando tipo a:', value, typeof value);
             setType(value);
           }}
         >
@@ -487,23 +497,36 @@ function SongForm({
             <SelectItem value="album">Álbum</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground mt-1">
-          Current value: {type} (type: {typeof type})
-        </p>
       </div>
 
       {type === "album" && (
-        <div>
-          <Label htmlFor="albumName" className="text-foreground">
-            Album Name
-          </Label>
-          <Input
-            id="albumName"
-            value={albumName}
-            onChange={(e) => setAlbumName(e.target.value)}
-            className="bg-background border-input text-foreground"
-            placeholder="Album Name"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="albumName" className="text-foreground">
+              Album Name
+            </Label>
+            <Input
+              id="albumName"
+              value={albumName}
+              onChange={(e) => setAlbumName(e.target.value)}
+              className="bg-background border-input text-foreground"
+              placeholder="Album Name"
+            />
+          </div>
+          <div>
+            <Label htmlFor="trackNumber" className="text-foreground">
+              Track Number
+            </Label>
+            <Input
+              id="trackNumber"
+              type="number"
+              min="1"
+              value={trackNumber}
+              onChange={(e) => setTrackNumber(e.target.value)}
+              className="bg-background border-input text-foreground"
+              placeholder="e.g. 1"
+            />
+          </div>
         </div>
       )}
 

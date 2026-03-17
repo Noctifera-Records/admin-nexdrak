@@ -19,6 +19,7 @@ interface Song {
   cover_image_url?: string;
   type: 'album' | 'single';
   album_name?: string;
+  track_number?: number;
   release_date?: string;
   created_at: string;
   youtube_embed_id?: string;
@@ -38,6 +39,7 @@ export function SongForm({ song, onClose }: SongFormProps) {
     cover_image_url: '',
     type: 'single' as 'album' | 'single',
     album_name: '',
+    track_number: '' as string | number,
     release_date: '',
     youtube_embed_id: '',
     slug: ''
@@ -56,6 +58,7 @@ export function SongForm({ song, onClose }: SongFormProps) {
         cover_image_url: song.cover_image_url || '',
         type: song.type,
         album_name: song.album_name || '',
+        track_number: song.track_number || '',
         release_date: song.release_date || '',
         youtube_embed_id: song.youtube_embed_id || '',
         slug: song.slug || ''
@@ -89,6 +92,7 @@ export function SongForm({ song, onClose }: SongFormProps) {
         cover_image_url: formData.cover_image_url || null,
         type: formData.type,
         album_name: formData.album_name || null,
+        track_number: formData.type === 'album' && formData.track_number ? parseInt(formData.track_number.toString()) : null,
         release_date: formData.release_date || null,
         youtube_embed_id: formData.youtube_embed_id || null,
         slug: formData.slug || null
@@ -178,21 +182,35 @@ export function SongForm({ song, onClose }: SongFormProps) {
             </div>
 
             {formData.type === 'album' && (
-              <div className="space-y-2">
-                <Label htmlFor="album_name">Album Name</Label>
-                <Input
-                  id="album_name"
-                  value={formData.album_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, album_name: e.target.value }))}
-                  placeholder="Album Name"
-                  list="existing-albums"
-                />
-                <datalist id="existing-albums">
-                  {existingAlbums.map(album => (
-                    <option key={album} value={album} />
-                  ))}
-                </datalist>
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="album_name">Album Name</Label>
+                  <Input
+                    id="album_name"
+                    value={formData.album_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, album_name: e.target.value }))}
+                    placeholder="Album Name"
+                    list="existing-albums"
+                  />
+                  <datalist id="existing-albums">
+                    {existingAlbums.map(album => (
+                      <option key={album} value={album} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="track_number">Track Number</Label>
+                  <Input
+                    id="track_number"
+                    type="number"
+                    value={formData.track_number}
+                    onChange={(e) => setFormData(prev => ({ ...prev, track_number: e.target.value }))}
+                    placeholder="e.g.: 1"
+                    min="1"
+                    required={formData.type === 'album'}
+                  />
+                </div>
+              </>
             )}
 
             <div className="space-y-2">

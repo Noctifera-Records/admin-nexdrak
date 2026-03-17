@@ -1,8 +1,5 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
+import { Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-
-// Critical for Cloudflare Workers/Pages
-neonConfig.fetchConnectionCache = true;
 
 function getConnectionString() {
   const connectionString = process.env.DATABASE_URL;

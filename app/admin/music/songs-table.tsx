@@ -14,6 +14,7 @@ interface Song {
   cover_image_url?: string;
   type: 'album' | 'single';
   album_name?: string;
+  track_number?: number;
   release_date?: string;
   created_at: string;
   youtube_embed_id?: string;
@@ -145,8 +146,13 @@ export function SongsTable({ songs, streamingLinks, onEdit, onDelete, onManageLi
                         </Badge>
                       </td>
                       <td className="p-2">
-                        {song.type === 'album' && song.album_name ? (
-                          <p className="font-medium text-sm text-foreground">{song.album_name}</p>
+                        {song.type === 'album' ? (
+                          <div className="flex flex-col">
+                            {song.album_name && <p className="font-medium text-sm text-foreground">{song.album_name}</p>}
+                            {song.track_number && (
+                              <p className="text-xs text-muted-foreground">Track {song.track_number}</p>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
@@ -286,9 +292,12 @@ export function SongsTable({ songs, streamingLinks, onEdit, onDelete, onManageLi
                     </Badge>
                   </div>
                   
-                  {song.type === 'album' && song.album_name && (
+                  {song.type === 'album' && (
                     <div className="mb-2">
-                      <p className="text-sm font-medium text-foreground">{song.album_name}</p>
+                      {song.album_name && <p className="text-sm font-medium text-foreground">{song.album_name}</p>}
+                      {song.track_number && (
+                        <p className="text-xs text-muted-foreground">Track {song.track_number}</p>
+                      )}
                     </div>
                   )}
                   

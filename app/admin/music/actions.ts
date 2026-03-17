@@ -15,7 +15,8 @@ const songSchema = z.object({
   type: z.enum(["album", "single"]),
   slug: z.string().optional().nullable(),
   stream_url: z.string().url("Invalid streaming URL").optional().nullable().or(z.literal("")),
-  youtube_embed_id: z.string().optional().nullable()
+  youtube_embed_id: z.string().optional().nullable(),
+  track_number: z.number().int().min(1).optional().nullable()
 });
 
 const streamingLinkSchema = z.object({
@@ -66,13 +67,13 @@ export async function createSong(data: unknown) {
         throw new Error(result.error.issues[0].message);
     }
 
-    const { title, artist, album_name, cover_image_url, release_date, type, slug, stream_url, youtube_embed_id } = result.data;
+    const { title, artist, album_name, cover_image_url, release_date, type, slug, stream_url, youtube_embed_id, track_number } = result.data;
 
     const res = await db.query(`
-        INSERT INTO songs (title, artist, album_name, cover_image_url, release_date, type, slug, stream_url, youtube_embed_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO songs (title, artist, album_name, cover_image_url, release_date, type, slug, stream_url, youtube_embed_id, track_number)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
-    `, [title, artist, album_name, cover_image_url, release_date, type, slug, stream_url || null, youtube_embed_id]);
+    `, [title, artist, album_name, cover_image_url, release_date, type, slug, stream_url || null, youtube_embed_id, track_number]);
 
     revalidatePath("/admin/music");
     return res.rows[0];
@@ -92,14 +93,14 @@ export async function updateSong(id: number, data: unknown) {
         throw new Error(result.error.issues[0].message);
     }
 
-    const { title, artist, album_name, cover_image_url, release_date, type, slug, stream_url, youtube_embed_id } = result.data;
+    const { title, artist, album_name, cover_image_url, release_date, type, slug, stream_url, youtube_embed_id, track_number } = result.data;
 
     const res = await db.query(`
         UPDATE songs 
-        SET title = $1, artist = $2, album_name = $3, cover_image_url = $4, release_date = $5, type = $6, slug = $7, stream_url = $8, youtube_embed_id = $9, updated_at = NOW()
-        WHERE id = $10
+        SET title = $1, artist = $2, album_name = $3, cover_image_url = $4, release_date = $5, type = $6, slug = $7, stream_url = $8, youtube_embed_id = $9, track_number = $10, updated_at = NOW()
+        WHERE id = $11
         RETURNING *
-    `, [title, artist, album_name, cover_image_url, release_date, type, slug, stream_url || null, youtube_embed_id, id]);
+    `, [title, artist, album_name, cover_image_url, release_date, type, slug, stream_url || null, youtube_embed_id, track_number, id]);
 
     revalidatePath("/admin/music");
     return res.rows[0];
