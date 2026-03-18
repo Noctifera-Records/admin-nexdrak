@@ -1,7 +1,7 @@
 "use server";
 
 import { getAuth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
@@ -14,11 +14,12 @@ export async function getSiteSettings() {
         throw new Error("Unauthorized");
     }
 
-    const res = await db.query(`
-        SELECT key, value FROM site_settings ORDER BY key
-    `);
-
-    return res.rows;
+    return await withDb(async (db) => {
+        const res = await db.query(`
+            SELECT key, value FROM site_settings ORDER BY key
+        `);
+        return res.rows;
+    });
 }
 
 export async function updateSiteSettings(settings: Record<string, string>) {
@@ -36,22 +37,22 @@ export async function updateSiteSettings(settings: Record<string, string>) {
     }));
 
     try {
-        await db.withConnection(async (client) => {
-            await client.query("BEGIN");
+        await withDb(async (db) => {
+            await db.query("BEGIN");
             try {
                 for (const { key, value } of updates) {
                     // Check if key exists
-                    const check = await client.query("SELECT key FROM site_settings WHERE key = $1", [key]);
+                    const check = await db.query("SELECT key FROM site_settings WHERE key = $1", [key]);
                     
                     if (check.rows.length > 0) {
-                        await client.query("UPDATE site_settings SET value = $1, updated_at = NOW() WHERE key = $2", [value, key]);
+                        await db.query("UPDATE site_settings SET value = $1, updated_at = NOW() WHERE key = $2", [value, key]);
                     } else {
-                        await client.query("INSERT INTO site_settings (key, value) VALUES ($1, $2)", [key, value]);
+                        await db.query("INSERT INTO site_settings (key, value) VALUES ($1, $2)", [key, value]);
                     }
                 }
-                await client.query("COMMIT");
+                await db.query("COMMIT");
             } catch (error) {
-                await client.query("ROLLBACK");
+                await db.query("ROLLBACK");
                 throw error;
             }
         });

@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -27,11 +27,12 @@ export async function getEvents() {
         throw new Error("Unauthorized");
     }
 
-    const res = await db.query(`
-        SELECT * FROM events ORDER BY date DESC
-    `);
-
-    return res.rows;
+    return await withDb(async (db) => {
+        const res = await db.query(`
+            SELECT * FROM events ORDER BY date DESC
+        `);
+        return res.rows;
+    });
 }
 
 export async function createEvent(data: unknown) {
@@ -48,16 +49,38 @@ export async function createEvent(data: unknown) {
         throw new Error(result.error.issues[0].message);
     }
 
-    const { title, description, date, location, venue, ticket_url, image_url, is_featured, is_published } = result.data;
+    const { 
+        title, 
+        description, 
+        date, 
+        location, 
+        venue, 
+        ticket_url, 
+        image_url, 
+        is_featured, 
+        is_published 
+    } = result.data;
 
-    const res = await db.query(`
-        INSERT INTO events (title, description, date, location, venue, ticket_url, image_url, is_featured, is_published)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING *
-    `, [title, description, date, location, venue, ticket_url, image_url, is_featured || false, is_published || false]);
+    return await withDb(async (db) => {
+        const res = await db.query(`
+            INSERT INTO events (title, description, date, location, venue, ticket_url, image_url, is_featured, is_published)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING *
+        `, [
+            title, 
+            description || null, 
+            date, 
+            location || null, 
+            venue || null, 
+            ticket_url || null, 
+            image_url || null, 
+            is_featured || false, 
+            is_published || false
+        ]);
 
-    revalidatePath("/admin/events");
-    return res.rows[0];
+        revalidatePath("/admin/events");
+        return res.rows[0];
+    });
 }
 
 export async function updateEvent(id: number, data: unknown) {
@@ -74,17 +97,40 @@ export async function updateEvent(id: number, data: unknown) {
         throw new Error(result.error.issues[0].message);
     }
 
-    const { title, description, date, location, venue, ticket_url, image_url, is_featured, is_published } = result.data;
+    const { 
+        title, 
+        description, 
+        date, 
+        location, 
+        venue, 
+        ticket_url, 
+        image_url, 
+        is_featured, 
+        is_published 
+    } = result.data;
 
-    const res = await db.query(`
-        UPDATE events 
-        SET title = $1, description = $2, date = $3, location = $4, venue = $5, ticket_url = $6, image_url = $7, is_featured = $8, is_published = $9, updated_at = NOW()
-        WHERE id = $10
-        RETURNING *
-    `, [title, description, date, location, venue, ticket_url, image_url, is_featured || false, is_published || false, id]);
+    return await withDb(async (db) => {
+        const res = await db.query(`
+            UPDATE events 
+            SET title = $1, description = $2, date = $3, location = $4, venue = $5, ticket_url = $6, image_url = $7, is_featured = $8, is_published = $9, updated_at = NOW()
+            WHERE id = $10
+            RETURNING *
+        `, [
+            title, 
+            description || null, 
+            date, 
+            location || null, 
+            venue || null, 
+            ticket_url || null, 
+            image_url || null, 
+            is_featured || false, 
+            is_published || false, 
+            id
+        ]);
 
-    revalidatePath("/admin/events");
-    return res.rows[0];
+        revalidatePath("/admin/events");
+        return res.rows[0];
+    });
 }
 
 export async function deleteEvent(id: number) {
@@ -96,7 +142,10 @@ export async function deleteEvent(id: number) {
         throw new Error("Unauthorized");
     }
 
-    await db.query("DELETE FROM events WHERE id = $1", [id]);
+    await withDb(async (db) => {
+        await db.query("DELETE FROM events WHERE id = $1", [id]);
+    });
+    
     revalidatePath("/admin/events");
     return { success: true };
 }

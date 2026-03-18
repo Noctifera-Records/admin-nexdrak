@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -14,7 +14,7 @@ export async function getAdminStats() {
     }
 
     try {
-        return await db.withConnection(async (client) => {
+        return await withDb(async (db) => {
             const [
                 usersCount,
                 songsCount,
@@ -23,12 +23,12 @@ export async function getAdminStats() {
                 eventsCount,
                 releasesCount
             ] = await Promise.all([
-                client.query('SELECT COUNT(*) FROM "user"'),
-                client.query('SELECT COUNT(*) FROM songs'),
-                client.query('SELECT COUNT(*) FROM merch'),
-                client.query('SELECT COUNT(*) FROM downloads'),
-                client.query('SELECT COUNT(*) FROM events'),
-                client.query('SELECT COUNT(*) FROM releases')
+                db.query('SELECT COUNT(*) FROM "user"'),
+                db.query('SELECT COUNT(*) FROM songs'),
+                db.query('SELECT COUNT(*) FROM merch'),
+                db.query('SELECT COUNT(*) FROM downloads'),
+                db.query('SELECT COUNT(*) FROM events'),
+                db.query('SELECT COUNT(*) FROM releases')
             ]);
 
             return {

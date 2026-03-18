@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -16,13 +16,14 @@ export async function getUsers() {
 
   // Fetch users from Better Auth 'user' table
   // Columns match backup.sql: created_at, email_verified
-  const res = await db.query(`
-    SELECT id, email, name as username, role, created_at, email_verified as email_confirmed_at 
-    FROM "user"
-    ORDER BY created_at DESC
-  `);
-
-  return res.rows;
+  return await withDb(async (db) => {
+    const res = await db.query(`
+      SELECT id, email, name as username, role, created_at, email_verified as email_confirmed_at 
+      FROM "user"
+      ORDER BY created_at DESC
+    `);
+    return res.rows;
+  });
 }
 
 export async function updateUserProfile(userId: string, updates: { role?: string, username?: string }) {
@@ -55,11 +56,13 @@ export async function updateUserProfile(userId: string, updates: { role?: string
 
     values.push(userId); // Add userId as last parameter
 
-    await db.query(`
-      UPDATE "user"
-      SET ${fields.join(", ")}, updated_at = NOW()
-      WHERE id = $${paramIndex}
-    `, values);
+    await withDb(async (db) => {
+      await db.query(`
+        UPDATE "user"
+        SET ${fields.join(", ")}, updated_at = NOW()
+        WHERE id = $${paramIndex}
+      `, values);
+    });
 
     revalidatePath("/admin/users");
     return { success: true };
@@ -85,7 +88,10 @@ export async function deleteUser(userId: string) {
 
   try {
     // Better Auth handles cascading deletes usually, but we delete from 'user' table directly
-    await db.query('DELETE FROM "user" WHERE id = $1', [userId]);
+    await withDb(async (db) => {
+      await db.query('DELETE FROM "user" WHERE id = $1', [userId]);
+    });
+    
     revalidatePath("/admin/users");
     return { success: true };
   } catch (error: any) {

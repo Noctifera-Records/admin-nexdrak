@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
@@ -14,11 +14,12 @@ export async function getReleases() {
         throw new Error("Unauthorized");
     }
 
-    const res = await db.query(`
-        SELECT * FROM releases ORDER BY release_date DESC
-    `);
-
-    return res.rows;
+    return await withDb(async (db) => {
+        const res = await db.query(`
+            SELECT * FROM releases ORDER BY release_date DESC
+        `);
+        return res.rows;
+    });
 }
 
 export async function createRelease(data: any) {
@@ -32,14 +33,21 @@ export async function createRelease(data: any) {
 
     const { title, release_date, cover_image_url, stream_url } = data;
 
-    const res = await db.query(`
-        INSERT INTO releases (title, release_date, cover_image_url, stream_url)
-        VALUES ($1, $2, $3, $4)
-        RETURNING *
-    `, [title, release_date, cover_image_url, stream_url]);
+    return await withDb(async (db) => {
+        const res = await db.query(`
+            INSERT INTO releases (title, release_date, cover_image_url, stream_url)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+        `, [
+            title, 
+            release_date, 
+            cover_image_url || null, 
+            stream_url || null
+        ]);
 
-    revalidatePath("/admin/releases");
-    return res.rows[0];
+        revalidatePath("/admin/releases");
+        return res.rows[0];
+    });
 }
 
 export async function updateRelease(id: number, data: any) {
@@ -53,15 +61,23 @@ export async function updateRelease(id: number, data: any) {
 
     const { title, release_date, cover_image_url, stream_url } = data;
 
-    const res = await db.query(`
-        UPDATE releases 
-        SET title = $1, release_date = $2, cover_image_url = $3, stream_url = $4
-        WHERE id = $5
-        RETURNING *
-    `, [title, release_date, cover_image_url, stream_url, id]);
+    return await withDb(async (db) => {
+        const res = await db.query(`
+            UPDATE releases 
+            SET title = $1, release_date = $2, cover_image_url = $3, stream_url = $4
+            WHERE id = $5
+            RETURNING *
+        `, [
+            title, 
+            release_date, 
+            cover_image_url || null, 
+            stream_url || null, 
+            id
+        ]);
 
-    revalidatePath("/admin/releases");
-    return res.rows[0];
+        revalidatePath("/admin/releases");
+        return res.rows[0];
+    });
 }
 
 export async function deleteRelease(id: number) {
@@ -73,7 +89,10 @@ export async function deleteRelease(id: number) {
         throw new Error("Unauthorized");
     }
 
-    await db.query("DELETE FROM releases WHERE id = $1", [id]);
+    await withDb(async (db) => {
+        await db.query("DELETE FROM releases WHERE id = $1", [id]);
+    });
+    
     revalidatePath("/admin/releases");
     return { success: true };
 }

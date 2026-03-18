@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { withDb } from "@/lib/db";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -25,11 +25,12 @@ export async function getMerch() {
         throw new Error("Unauthorized");
     }
 
-    const res = await db.query(`
-        SELECT * FROM merch ORDER BY created_at DESC
-    `);
-
-    return res.rows;
+    return await withDb(async (db) => {
+        const res = await db.query(`
+            SELECT * FROM merch ORDER BY created_at DESC
+        `);
+        return res.rows;
+    });
 }
 
 export async function createMerch(data: unknown) {
@@ -48,14 +49,24 @@ export async function createMerch(data: unknown) {
 
     const { name, description, price, image_url, purchase_url, category, is_available } = result.data;
 
-    const res = await db.query(`
-        INSERT INTO merch (name, description, price, image_url, purchase_url, category, is_available)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
-    `, [name, description, price, image_url, purchase_url, category, is_available || false]);
+    return await withDb(async (db) => {
+        const res = await db.query(`
+            INSERT INTO merch (name, description, price, image_url, purchase_url, category, is_available)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING *
+        `, [
+            name, 
+            description || null, 
+            price, 
+            image_url || null, 
+            purchase_url, 
+            category, 
+            is_available || false
+        ]);
 
-    revalidatePath("/admin/merch");
-    return res.rows[0];
+        revalidatePath("/admin/merch");
+        return res.rows[0];
+    });
 }
 
 export async function updateMerch(id: number, data: unknown) {
@@ -74,15 +85,26 @@ export async function updateMerch(id: number, data: unknown) {
 
     const { name, description, price, image_url, purchase_url, category, is_available } = result.data;
 
-    const res = await db.query(`
-        UPDATE merch 
-        SET name = $1, description = $2, price = $3, image_url = $4, purchase_url = $5, category = $6, is_available = $7, updated_at = NOW()
-        WHERE id = $8
-        RETURNING *
-    `, [name, description, price, image_url, purchase_url, category, is_available || false, id]);
+    return await withDb(async (db) => {
+        const res = await db.query(`
+            UPDATE merch 
+            SET name = $1, description = $2, price = $3, image_url = $4, purchase_url = $5, category = $6, is_available = $7, updated_at = NOW()
+            WHERE id = $8
+            RETURNING *
+        `, [
+            name, 
+            description || null, 
+            price, 
+            image_url || null, 
+            purchase_url, 
+            category, 
+            is_available || false, 
+            id
+        ]);
 
-    revalidatePath("/admin/merch");
-    return res.rows[0];
+        revalidatePath("/admin/merch");
+        return res.rows[0];
+    });
 }
 
 export async function deleteMerch(id: number) {
@@ -94,7 +116,10 @@ export async function deleteMerch(id: number) {
         throw new Error("Unauthorized");
     }
 
-    await db.query("DELETE FROM merch WHERE id = $1", [id]);
+    await withDb(async (db) => {
+        await db.query("DELETE FROM merch WHERE id = $1", [id]);
+    });
+    
     revalidatePath("/admin/merch");
     return { success: true };
 }
