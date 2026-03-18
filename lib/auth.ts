@@ -15,17 +15,16 @@ function getResend() {
 
 const getFromEmail = () => process.env.EMAIL_FROM || "noreply@nexdrak.com";
 
-let _auth: any = null;
-
 /**
- * Lazy initialization of Better Auth.
+ * Initialization of Better Auth.
+ * CRITICAL: In Cloudflare Workers, we MUST NOT cache the auth object globally 
+ * if it contains a database connection pool, because pools cannot be reused 
+ * across different requests.
  */
 export function getAuth() {
-  if (_auth) return _auth;
-
   const db = getDb();
   
-  _auth = betterAuth({
+  return betterAuth({
     baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_BETTER_AUTH_URL,
     secret: process.env.BETTER_AUTH_SECRET,
     database: drizzleAdapter(db, {
@@ -63,16 +62,15 @@ export function getAuth() {
       admin(),
       twoFactor({
         issuer: "NexDrak",
-        // This ensures the user is redirected to MFA challenge after login
-        // if they have it enabled.
       })
     ],
   });
-  
-  return _auth;
 }
 
-// Exported object for backward compatibility in standard routes
+/**
+ * Exported object for backward compatibility in standard routes.
+ * It always calls getAuth() to ensure a fresh, request-scoped instance.
+ */
 export const auth = {
   get handler() {
     return (req: Request) => getAuth().handler(req);

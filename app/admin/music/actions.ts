@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { getAuth } from "@/lib/auth";
 import { withDb } from "@/lib/db";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -25,16 +25,20 @@ const streamingLinkSchema = z.object({
   is_primary: z.boolean()
 });
 
+async function checkAdmin() {
+    const session = await getAuth().api.getSession({
+        headers: await headers()
+    });
+
+    if (!session || session.user.role !== "admin") {
+        throw new Error("Unauthorized");
+    }
+    return session;
+}
+
 export async function getSongs() {
+    await checkAdmin();
     return withDb(async (db) => {
-        const session = await auth.api.getSession({
-            headers: await headers()
-        });
-
-        if (!session || session.user.role !== "admin") {
-            throw new Error("Unauthorized");
-        }
-
         const res = await db.query(`
             SELECT s.*, 
                    json_agg(
@@ -56,15 +60,8 @@ export async function getSongs() {
 }
 
 export async function createSong(data: unknown) {
+    await checkAdmin();
     return withDb(async (db) => {
-        const session = await auth.api.getSession({
-            headers: await headers()
-        });
-
-        if (!session || session.user.role !== "admin") {
-            throw new Error("Unauthorized");
-        }
-
         const result = songSchema.safeParse(data);
         if (!result.success) {
             throw new Error(result.error.issues[0].message);
@@ -72,7 +69,6 @@ export async function createSong(data: unknown) {
 
         const { title, artist, album_name, cover_image_url, release_date, type, slug, stream_url, youtube_embed_id, track_number } = result.data;
 
-        // Clean data: convert empty strings to null for optional fields
         const clean_release_date = release_date && release_date.trim() !== "" ? release_date : null;
         const clean_cover_image_url = cover_image_url && cover_image_url.trim() !== "" ? cover_image_url : null;
         const clean_album_name = album_name && album_name.trim() !== "" ? album_name : null;
@@ -93,15 +89,8 @@ export async function createSong(data: unknown) {
 }
 
 export async function updateSong(id: number, data: unknown) {
+    await checkAdmin();
     return withDb(async (db) => {
-        const session = await auth.api.getSession({
-            headers: await headers()
-        });
-
-        if (!session || session.user.role !== "admin") {
-            throw new Error("Unauthorized");
-        }
-
         const result = songSchema.safeParse(data);
         if (!result.success) {
             throw new Error(result.error.issues[0].message);
@@ -109,7 +98,6 @@ export async function updateSong(id: number, data: unknown) {
 
         const { title, artist, album_name, cover_image_url, release_date, type, slug, stream_url, youtube_embed_id, track_number } = result.data;
 
-        // Clean data: convert empty strings to null for optional fields
         const clean_release_date = release_date && release_date.trim() !== "" ? release_date : null;
         const clean_cover_image_url = cover_image_url && cover_image_url.trim() !== "" ? cover_image_url : null;
         const clean_album_name = album_name && album_name.trim() !== "" ? album_name : null;
@@ -131,15 +119,8 @@ export async function updateSong(id: number, data: unknown) {
 }
 
 export async function deleteSong(id: number) {
+    await checkAdmin();
     return withDb(async (db) => {
-        const session = await auth.api.getSession({
-            headers: await headers()
-        });
-
-        if (!session || session.user.role !== "admin") {
-            throw new Error("Unauthorized");
-        }
-
         await db.query("DELETE FROM songs WHERE id = $1", [id]);
         revalidatePath("/admin/music");
         return { success: true };
@@ -148,15 +129,8 @@ export async function deleteSong(id: number) {
 
 // Streaming Links Actions
 export async function addStreamingLink(songId: number, data: unknown) {
+    await checkAdmin();
     return withDb(async (db) => {
-        const session = await auth.api.getSession({
-            headers: await headers()
-        });
-
-        if (!session || session.user.role !== "admin") {
-            throw new Error("Unauthorized");
-        }
-
         const result = streamingLinkSchema.safeParse(data);
         if (!result.success) {
             throw new Error(result.error.issues[0].message);
@@ -165,7 +139,6 @@ export async function addStreamingLink(songId: number, data: unknown) {
         const { platform, url, is_primary } = result.data;
 
         if (is_primary) {
-            // Reset primary for this song
             await db.query("UPDATE streaming_links SET is_primary = false WHERE song_id = $1", [songId]);
         }
 
@@ -181,15 +154,8 @@ export async function addStreamingLink(songId: number, data: unknown) {
 }
 
 export async function deleteStreamingLink(id: number) {
+    await checkAdmin();
     return withDb(async (db) => {
-        const session = await auth.api.getSession({
-            headers: await headers()
-        });
-
-        if (!session || session.user.role !== "admin") {
-            throw new Error("Unauthorized");
-        }
-
         await db.query("DELETE FROM streaming_links WHERE id = $1", [id]);
         revalidatePath("/admin/music");
         return { success: true };
@@ -197,19 +163,10 @@ export async function deleteStreamingLink(id: number) {
 }
 
 export async function setPrimaryStreamingLink(id: number, songId: number) {
+    await checkAdmin();
     return withDb(async (db) => {
-        const session = await auth.api.getSession({
-            headers: await headers()
-        });
-
-        if (!session || session.user.role !== "admin") {
-            throw new Error("Unauthorized");
-        }
-
-        // Reset all for this song
         await db.query("UPDATE streaming_links SET is_primary = false WHERE song_id = $1", [songId]);
         
-        // Set new primary
         const res = await db.query(`
             UPDATE streaming_links 
             SET is_primary = true 
