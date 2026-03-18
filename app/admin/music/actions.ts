@@ -69,11 +69,20 @@ export async function createSong(data: unknown) {
 
     const { title, artist, album_name, cover_image_url, release_date, type, slug, stream_url, youtube_embed_id, track_number } = result.data;
 
+    // Clean data: convert empty strings to null for optional fields
+    const clean_release_date = release_date && release_date.trim() !== "" ? release_date : null;
+    const clean_cover_image_url = cover_image_url && cover_image_url.trim() !== "" ? cover_image_url : null;
+    const clean_album_name = album_name && album_name.trim() !== "" ? album_name : null;
+    const clean_slug = slug && slug.trim() !== "" ? slug : null;
+    const clean_stream_url = stream_url && stream_url.trim() !== "" ? stream_url : null;
+    const clean_youtube_embed_id = youtube_embed_id && youtube_embed_id.trim() !== "" ? youtube_embed_id : null;
+    const clean_track_number = (type === "album" && track_number) ? track_number : null;
+
     const res = await db.query(`
         INSERT INTO songs (title, artist, album_name, cover_image_url, release_date, type, slug, stream_url, youtube_embed_id, track_number)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
-    `, [title, artist, album_name, cover_image_url, release_date, type, slug, stream_url || null, youtube_embed_id, track_number]);
+    `, [title.trim(), artist.trim(), clean_album_name, clean_cover_image_url, clean_release_date, type, clean_slug, clean_stream_url, clean_youtube_embed_id, clean_track_number]);
 
     revalidatePath("/admin/music");
     return res.rows[0];
@@ -95,12 +104,21 @@ export async function updateSong(id: number, data: unknown) {
 
     const { title, artist, album_name, cover_image_url, release_date, type, slug, stream_url, youtube_embed_id, track_number } = result.data;
 
+    // Clean data: convert empty strings to null for optional fields
+    const clean_release_date = release_date && release_date.trim() !== "" ? release_date : null;
+    const clean_cover_image_url = cover_image_url && cover_image_url.trim() !== "" ? cover_image_url : null;
+    const clean_album_name = album_name && album_name.trim() !== "" ? album_name : null;
+    const clean_slug = slug && slug.trim() !== "" ? slug : null;
+    const clean_stream_url = stream_url && stream_url.trim() !== "" ? stream_url : null;
+    const clean_youtube_embed_id = youtube_embed_id && youtube_embed_id.trim() !== "" ? youtube_embed_id : null;
+    const clean_track_number = (type === "album" && track_number) ? track_number : null;
+
     const res = await db.query(`
         UPDATE songs 
         SET title = $1, artist = $2, album_name = $3, cover_image_url = $4, release_date = $5, type = $6, slug = $7, stream_url = $8, youtube_embed_id = $9, track_number = $10, updated_at = NOW()
         WHERE id = $11
         RETURNING *
-    `, [title, artist, album_name, cover_image_url, release_date, type, slug, stream_url || null, youtube_embed_id, track_number, id]);
+    `, [title.trim(), artist.trim(), clean_album_name, clean_cover_image_url, clean_release_date, type, clean_slug, clean_stream_url, clean_youtube_embed_id, clean_track_number, id]);
 
     revalidatePath("/admin/music");
     return res.rows[0];

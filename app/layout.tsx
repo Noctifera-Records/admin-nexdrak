@@ -22,6 +22,14 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          // Fix for esbuild __name ReferenceError in some environments
+          if (typeof globalThis !== 'undefined' && typeof globalThis.__name === 'undefined') {
+            globalThis.__name = (target, value) => Object.defineProperty(target, 'name', { value, configurable: true });
+          }
+        ` }} />
+      </head>
       <body className="min-h-screen bg-background text-foreground transition-colors duration-300">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
           <div className="min-h-screen flex flex-col">
