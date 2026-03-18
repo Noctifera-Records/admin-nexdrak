@@ -2,8 +2,7 @@ import { betterAuth } from "better-auth";
 import { admin, twoFactor } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { Resend } from "resend";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { getDb } from "./db";
 import { schema } from "./db/schema";
 import { resetPasswordTemplate, verifyEmailTemplate } from "./email-templates";
 
@@ -18,18 +17,11 @@ const getFromEmail = () => process.env.EMAIL_FROM || "noreply@nexdrak.com";
 
 /**
  * Initialization of Better Auth.
- * FOR CLOUDFLARE WORKERS: We use neon-http (stateless) for auth 
- * to avoid connection leaks and "Cross-Request I/O" errors.
+ * We use getDb() which creates a Pool. 
+ * Better Auth manages its own internal queries through the adapter.
  */
 export function getAuth() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error('DATABASE_URL environment variable is not set');
-  }
-  
-  // Use HTTP instead of WebSockets/Pool for Auth
-  const sql = neon(connectionString);
-  const db = drizzle(sql);
+  const db = getDb();
   
   return betterAuth({
     baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_BETTER_AUTH_URL,

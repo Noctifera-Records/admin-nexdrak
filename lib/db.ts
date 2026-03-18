@@ -11,14 +11,17 @@ function getConnectionString() {
 
 /**
  * getDb initializes a database connection.
- * IMPORTANT: We use rawQuery to avoid colliding with Drizzle's Relational API (db.query).
+ * We MUST NOT override .query if we want Drizzle's relational API to work.
+ * Instead, we add .rawQuery for our manual SQL needs.
  */
 export function getDb() {
   const connectionString = getConnectionString();
   const pool = new Pool({ connectionString });
   
+  // Create the standard drizzle instance
   const drizzleDb = drizzle(pool);
   
+  // Add our custom rawQuery helper alongside the standard Drizzle methods
   return Object.assign(drizzleDb, {
     async rawQuery(sqlText: string, params?: unknown[]) {
       try {
@@ -30,13 +33,14 @@ export function getDb() {
       }
     },
     async end() {
+      // Drizzle doesn't have an .end() method, but the pool does.
       await pool.end().catch(() => {});
     }
   });
 }
 
 /**
- * Legacy compatibility object.
+ * Global db object for legacy code.
  */
 export const db = {
   async query(sqlText: string, params?: unknown[]) {

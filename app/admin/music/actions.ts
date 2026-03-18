@@ -26,14 +26,19 @@ const streamingLinkSchema = z.object({
 });
 
 async function checkAdmin() {
-    const session = await getAuth().api.getSession({
-        headers: await headers()
-    });
+    try {
+        const session = await getAuth().api.getSession({
+            headers: await headers()
+        });
 
-    if (!session || session.user.role !== "admin") {
-        throw new Error("Unauthorized");
+        if (!session || session.user.role !== "admin") {
+            throw new Error("Unauthorized");
+        }
+        return session;
+    } catch (error: any) {
+        console.error("[checkAdmin] Auth Error:", error.message);
+        throw new Error("Authentication failed");
     }
-    return session;
 }
 
 export async function getSongs() {
@@ -129,28 +134,43 @@ export async function deleteSong(id: number) {
 
 // Streaming Links Actions
 export async function addStreamingLink(songId: number, data: unknown) {
-    await checkAdmin();
-    return withDb(async (db) => {
-        const result = streamingLinkSchema.safeParse(data);
-        if (!result.success) {
-            throw new Error(result.error.issues[0].message);
-        }
+    try {
+        await checkAdmin();
+        return await withDb(async (db) => {
+            const result = streamingLinkSchema.safeParse(data);
+            if (!result.success) {
+                console.error("[addStreamingLink] Validation Error:", result.error.format());
+                throw new Error(result.error.issues[0].message);
+            }
 
-        const { platform, url, is_primary } = result.data;
+            const { platform, url, is_primary } = result.data;
 
-        if (is_primary) {
-            await db.rawQuery("UPDATE streaming_links SET is_primary = false WHERE song_id = $1", [songId]);
-        }
+            if (is_primary) {
+                await db.rawQuery("UPDATE streaming_links SET is_primary = false WHERE song_id = $1", [songId]);
+            }
 
-        const res = await db.rawQuery(`
-            INSERT INTO streaming_links (song_id, platform, url, is_primary)
-            VALUES ($1, $2, $3, $4)
-            RETURNING *
-        `, [songId, platform, url, is_primary]);
+            console.log("[addStreamingLink] Inserting link for song:", songId);
+            const res = await db.rawQuery(`
+                INSERT INTO streaming_links (song_id, platform, url, is_primary)
+                VALUES ($1, $2, $3, $4)
+                RETURNING id, song_id, platform, url, is_primary
+            `, [songId, platform, url, is_primary]);
 
-        revalidatePath("/admin/music");
-        return res.rows[0];
-    });
+            console.log("[addStreamingLink] Insert successful, ID:", res.rows[0].id);
+
+            // Cloudflare Workers workaround: avoid revalidatePath if it causes hangs
+            try {
+                revalidatePath("/admin/music");
+            } catch (e) {
+                console.warn("[addStreamingLink] revalidatePath failed (non-critical):", e);
+            }
+            
+            return res.rows[0];
+        });
+    } catch (error: any) {
+        console.error("[addStreamingLink] Fatal Error:", error.message);
+        throw new Error(error.message || "Failed to add streaming link");
+    }
 }
 
 export async function deleteStreamingLink(id: number) {
@@ -171,7 +191,7 @@ export async function setPrimaryStreamingLink(id: number, songId: number) {
             UPDATE streaming_links 
             SET is_primary = true 
             WHERE id = $1
-            RETURNING *
+            RETURNING id, song_id, platform, url, is_primary
         `, [id]);
 
         revalidatePath("/admin/music");
