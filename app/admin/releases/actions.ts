@@ -15,7 +15,7 @@ export async function getReleases() {
     }
 
     return await withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             SELECT * FROM releases ORDER BY release_date DESC
         `);
         return res.rows;
@@ -34,7 +34,7 @@ export async function createRelease(data: any) {
     const { title, release_date, cover_image_url, stream_url } = data;
 
     return await withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             INSERT INTO releases (title, release_date, cover_image_url, stream_url)
             VALUES ($1, $2, $3, $4)
             RETURNING *
@@ -62,7 +62,7 @@ export async function updateRelease(id: number, data: any) {
     const { title, release_date, cover_image_url, stream_url } = data;
 
     return await withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             UPDATE releases 
             SET title = $1, release_date = $2, cover_image_url = $3, stream_url = $4
             WHERE id = $5
@@ -90,7 +90,7 @@ export async function deleteRelease(id: number) {
     }
 
     await withDb(async (db) => {
-        await db.query("DELETE FROM releases WHERE id = $1", [id]);
+        await db.rawQuery("DELETE FROM releases WHERE id = $1", [id]);
     });
     
     revalidatePath("/admin/releases");

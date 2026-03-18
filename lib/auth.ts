@@ -2,7 +2,8 @@ import { betterAuth } from "better-auth";
 import { admin, twoFactor } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { Resend } from "resend";
-import { getDb } from "./db";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import { schema } from "./db/schema";
 import { resetPasswordTemplate, verifyEmailTemplate } from "./email-templates";
 
@@ -17,12 +18,18 @@ const getFromEmail = () => process.env.EMAIL_FROM || "noreply@nexdrak.com";
 
 /**
  * Initialization of Better Auth.
- * CRITICAL: In Cloudflare Workers, we MUST NOT cache the auth object globally 
- * if it contains a database connection pool, because pools cannot be reused 
- * across different requests.
+ * FOR CLOUDFLARE WORKERS: We use neon-http (stateless) for auth 
+ * to avoid connection leaks and "Cross-Request I/O" errors.
  */
 export function getAuth() {
-  const db = getDb();
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  
+  // Use HTTP instead of WebSockets/Pool for Auth
+  const sql = neon(connectionString);
+  const db = drizzle(sql);
   
   return betterAuth({
     baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_BETTER_AUTH_URL,
@@ -69,7 +76,6 @@ export function getAuth() {
 
 /**
  * Exported object for backward compatibility in standard routes.
- * It always calls getAuth() to ensure a fresh, request-scoped instance.
  */
 export const auth = {
   get handler() {

@@ -39,7 +39,7 @@ async function checkAdmin() {
 export async function getSongs() {
     await checkAdmin();
     return withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             SELECT s.*, 
                    json_agg(
                        json_build_object(
@@ -77,7 +77,7 @@ export async function createSong(data: unknown) {
         const clean_youtube_embed_id = youtube_embed_id && youtube_embed_id.trim() !== "" ? youtube_embed_id : null;
         const clean_track_number = (type === "album" && track_number) ? track_number : null;
 
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             INSERT INTO songs (title, artist, album_name, cover_image_url, release_date, type, slug, stream_url, youtube_embed_id, track_number)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             RETURNING *
@@ -106,7 +106,7 @@ export async function updateSong(id: number, data: unknown) {
         const clean_youtube_embed_id = youtube_embed_id && youtube_embed_id.trim() !== "" ? youtube_embed_id : null;
         const clean_track_number = (type === "album" && track_number) ? track_number : null;
 
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             UPDATE songs 
             SET title = $1, artist = $2, album_name = $3, cover_image_url = $4, release_date = $5, type = $6, slug = $7, stream_url = $8, youtube_embed_id = $9, track_number = $10, updated_at = NOW()
             WHERE id = $11
@@ -121,7 +121,7 @@ export async function updateSong(id: number, data: unknown) {
 export async function deleteSong(id: number) {
     await checkAdmin();
     return withDb(async (db) => {
-        await db.query("DELETE FROM songs WHERE id = $1", [id]);
+        await db.rawQuery("DELETE FROM songs WHERE id = $1", [id]);
         revalidatePath("/admin/music");
         return { success: true };
     });
@@ -139,10 +139,10 @@ export async function addStreamingLink(songId: number, data: unknown) {
         const { platform, url, is_primary } = result.data;
 
         if (is_primary) {
-            await db.query("UPDATE streaming_links SET is_primary = false WHERE song_id = $1", [songId]);
+            await db.rawQuery("UPDATE streaming_links SET is_primary = false WHERE song_id = $1", [songId]);
         }
 
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             INSERT INTO streaming_links (song_id, platform, url, is_primary)
             VALUES ($1, $2, $3, $4)
             RETURNING *
@@ -156,7 +156,7 @@ export async function addStreamingLink(songId: number, data: unknown) {
 export async function deleteStreamingLink(id: number) {
     await checkAdmin();
     return withDb(async (db) => {
-        await db.query("DELETE FROM streaming_links WHERE id = $1", [id]);
+        await db.rawQuery("DELETE FROM streaming_links WHERE id = $1", [id]);
         revalidatePath("/admin/music");
         return { success: true };
     });
@@ -165,9 +165,9 @@ export async function deleteStreamingLink(id: number) {
 export async function setPrimaryStreamingLink(id: number, songId: number) {
     await checkAdmin();
     return withDb(async (db) => {
-        await db.query("UPDATE streaming_links SET is_primary = false WHERE song_id = $1", [songId]);
+        await db.rawQuery("UPDATE streaming_links SET is_primary = false WHERE song_id = $1", [songId]);
         
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             UPDATE streaming_links 
             SET is_primary = true 
             WHERE id = $1

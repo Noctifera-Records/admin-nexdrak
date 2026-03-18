@@ -11,26 +11,22 @@ function getConnectionString() {
 
 /**
  * getDb initializes a database connection.
- * In Cloudflare Workers, we create a new pool/client per request context.
+ * IMPORTANT: We use rawQuery to avoid colliding with Drizzle's Relational API (db.query).
  */
 export function getDb() {
   const connectionString = getConnectionString();
   const pool = new Pool({ connectionString });
   
-  // Extend the drizzle object with a direct query method for legacy support
   const drizzleDb = drizzle(pool);
   
   return Object.assign(drizzleDb, {
-    async query(sqlText: string, params?: unknown[]) {
+    async rawQuery(sqlText: string, params?: unknown[]) {
       try {
         const result = await pool.query(sqlText, params || []);
         return { rows: result.rows };
       } catch (error) {
-        console.error('Database query error:', error);
+        console.error('Database rawQuery error:', error);
         throw error;
-      } finally {
-        // En consultas individuales cerramos el pool inmediatamente
-        await pool.end().catch(() => {});
       }
     },
     async end() {
@@ -41,35 +37,26 @@ export function getDb() {
 
 /**
  * Legacy compatibility object.
- * Warning: This creates a new pool for every single call.
- * For multiple queries, prefer using withDb.
  */
 export const db = {
   async query(sqlText: string, params?: unknown[]) {
-    const connectionString = getConnectionString();
-    const pool = new Pool({ connectionString });
+    const dbInstance = getDb();
     try {
-      const result = await pool.query(sqlText, params || []);
-      return { rows: result.rows };
-    } catch (error) {
-      console.error('Database query error:', error);
-      throw error;
+      return await dbInstance.rawQuery(sqlText, params);
     } finally {
-      await pool.end().catch(() => {});
+      await dbInstance.end();
     }
   }
 } as any;
 
 /**
  * Executes a callback within a single database connection.
- * Useful for transactions or multiple related queries.
  */
 export async function withDb<T>(callback: (db: ReturnType<typeof getDb>) => Promise<T>): Promise<T> {
   const dbInstance = getDb();
   try {
     return await callback(dbInstance);
   } finally {
-    // getDb().query already handles its own end(), but drizzle calls might not
     await dbInstance.end();
   }
 }

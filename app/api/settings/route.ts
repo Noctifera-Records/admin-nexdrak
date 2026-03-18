@@ -5,10 +5,10 @@ export const runtime = "edge";
 
 export async function GET() {
   return withDb(async (db) => {
-    try {
-      const res = await db.query(`
-        SELECT key, value FROM site_settings ORDER BY key
-      `);
+      try {
+          const res = await db.rawQuery(`
+              SELECT key, value FROM site_settings
+          `);
       
       return NextResponse.json(res.rows);
     } catch (error: any) {

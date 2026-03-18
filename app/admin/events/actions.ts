@@ -28,7 +28,7 @@ export async function getEvents() {
     }
 
     return await withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             SELECT * FROM events ORDER BY date DESC
         `);
         return res.rows;
@@ -62,7 +62,7 @@ export async function createEvent(data: unknown) {
     } = result.data;
 
     return await withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             INSERT INTO events (title, description, date, location, venue, ticket_url, image_url, is_featured, is_published)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING *
@@ -110,7 +110,7 @@ export async function updateEvent(id: number, data: unknown) {
     } = result.data;
 
     return await withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             UPDATE events 
             SET title = $1, description = $2, date = $3, location = $4, venue = $5, ticket_url = $6, image_url = $7, is_featured = $8, is_published = $9, updated_at = NOW()
             WHERE id = $10
@@ -143,7 +143,7 @@ export async function deleteEvent(id: number) {
     }
 
     await withDb(async (db) => {
-        await db.query("DELETE FROM events WHERE id = $1", [id]);
+        await db.rawQuery("DELETE FROM events WHERE id = $1", [id]);
     });
     
     revalidatePath("/admin/events");

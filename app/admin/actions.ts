@@ -23,12 +23,12 @@ export async function getAdminStats() {
                 eventsCount,
                 releasesCount
             ] = await Promise.all([
-                db.query('SELECT COUNT(*) FROM "user"'),
-                db.query('SELECT COUNT(*) FROM songs'),
-                db.query('SELECT COUNT(*) FROM merch'),
-                db.query('SELECT COUNT(*) FROM downloads'),
-                db.query('SELECT COUNT(*) FROM events'),
-                db.query('SELECT COUNT(*) FROM releases')
+                db.rawQuery('SELECT COUNT(*) FROM "user"'),
+                db.rawQuery('SELECT COUNT(*) FROM songs'),
+                db.rawQuery('SELECT COUNT(*) FROM merch'),
+                db.rawQuery('SELECT COUNT(*) FROM downloads'),
+                db.rawQuery('SELECT COUNT(*) FROM events'),
+                db.rawQuery('SELECT COUNT(*) FROM releases')
             ]);
 
             return {

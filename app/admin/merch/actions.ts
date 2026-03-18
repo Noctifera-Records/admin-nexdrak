@@ -26,7 +26,7 @@ export async function getMerch() {
     }
 
     return await withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             SELECT * FROM merch ORDER BY created_at DESC
         `);
         return res.rows;
@@ -50,7 +50,7 @@ export async function createMerch(data: unknown) {
     const { name, description, price, image_url, purchase_url, category, is_available } = result.data;
 
     return await withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             INSERT INTO merch (name, description, price, image_url, purchase_url, category, is_available)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *
@@ -86,7 +86,7 @@ export async function updateMerch(id: number, data: unknown) {
     const { name, description, price, image_url, purchase_url, category, is_available } = result.data;
 
     return await withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             UPDATE merch 
             SET name = $1, description = $2, price = $3, image_url = $4, purchase_url = $5, category = $6, is_available = $7, updated_at = NOW()
             WHERE id = $8
@@ -117,7 +117,7 @@ export async function deleteMerch(id: number) {
     }
 
     await withDb(async (db) => {
-        await db.query("DELETE FROM merch WHERE id = $1", [id]);
+        await db.rawQuery("DELETE FROM merch WHERE id = $1", [id]);
     });
     
     revalidatePath("/admin/merch");

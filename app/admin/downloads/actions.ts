@@ -15,7 +15,7 @@ export async function getDownloads() {
     }
 
     return await withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             SELECT * FROM downloads ORDER BY created_at DESC
         `);
         return res.rows;
@@ -44,7 +44,7 @@ export async function createDownload(data: any) {
     } = data;
 
     return await withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             INSERT INTO downloads (title, description, category, file_url, cover_image_url, file_size, file_type, is_featured, is_public)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING *
@@ -87,7 +87,7 @@ export async function updateDownload(id: number, data: any) {
     } = data;
 
     return await withDb(async (db) => {
-        const res = await db.query(`
+        const res = await db.rawQuery(`
             UPDATE downloads 
             SET title = $1, description = $2, category = $3, file_url = $4, cover_image_url = $5, file_size = $6, file_type = $7, is_featured = $8, is_public = $9
             WHERE id = $10
@@ -120,7 +120,7 @@ export async function deleteDownload(id: number) {
     }
 
     await withDb(async (db) => {
-        await db.query("DELETE FROM downloads WHERE id = $1", [id]);
+        await db.rawQuery("DELETE FROM downloads WHERE id = $1", [id]);
     });
     
     revalidatePath("/admin/downloads");

@@ -17,7 +17,7 @@ export async function getUsers() {
   // Fetch users from Better Auth 'user' table
   // Columns match backup.sql: created_at, email_verified
   return await withDb(async (db) => {
-    const res = await db.query(`
+    const res = await db.rawQuery(`
       SELECT id, email, name as username, role, created_at, email_verified as email_confirmed_at 
       FROM "user"
       ORDER BY created_at DESC
@@ -57,7 +57,7 @@ export async function updateUserProfile(userId: string, updates: { role?: string
     values.push(userId); // Add userId as last parameter
 
     await withDb(async (db) => {
-      await db.query(`
+      await db.rawQuery(`
         UPDATE "user"
         SET ${fields.join(", ")}, updated_at = NOW()
         WHERE id = $${paramIndex}
@@ -89,7 +89,7 @@ export async function deleteUser(userId: string) {
   try {
     // Better Auth handles cascading deletes usually, but we delete from 'user' table directly
     await withDb(async (db) => {
-      await db.query('DELETE FROM "user" WHERE id = $1', [userId]);
+      await db.rawQuery('DELETE FROM "user" WHERE id = $1', [userId]);
     });
     
     revalidatePath("/admin/users");

@@ -15,8 +15,8 @@ export async function getSiteSettings() {
     }
 
     return await withDb(async (db) => {
-        const res = await db.query(`
-            SELECT key, value FROM site_settings ORDER BY key
+        const res = await db.rawQuery(`
+            SELECT key, value FROM site_settings
         `);
         return res.rows;
     });
@@ -31,29 +31,23 @@ export async function updateSiteSettings(settings: Record<string, string>) {
         throw new Error("Unauthorized");
     }
 
-    const updates = Object.entries(settings).map(([key, value]) => ({
-        key,
-        value: value?.trim() || ''
-    }));
-
     try {
         await withDb(async (db) => {
-            await db.query("BEGIN");
+            await db.rawQuery("BEGIN");
             try {
-                for (const { key, value } of updates) {
-                    // Check if key exists
-                    const check = await db.query("SELECT key FROM site_settings WHERE key = $1", [key]);
-                    
+                for (const [key, value] of Object.entries(settings)) {
+                    const check = await db.rawQuery("SELECT key FROM site_settings WHERE key = $1", [key]);
+
                     if (check.rows.length > 0) {
-                        await db.query("UPDATE site_settings SET value = $1, updated_at = NOW() WHERE key = $2", [value, key]);
+                        await db.rawQuery("UPDATE site_settings SET value = $1, updated_at = NOW() WHERE key = $2", [value, key]);
                     } else {
-                        await db.query("INSERT INTO site_settings (key, value) VALUES ($1, $2)", [key, value]);
+                        await db.rawQuery("INSERT INTO site_settings (key, value) VALUES ($1, $2)", [key, value]);
                     }
                 }
-                await db.query("COMMIT");
-            } catch (error) {
-                await db.query("ROLLBACK");
-                throw error;
+                await db.rawQuery("COMMIT");
+            } catch (e) {
+                await db.rawQuery("ROLLBACK");
+                throw e;
             }
         });
 
