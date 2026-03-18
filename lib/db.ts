@@ -18,10 +18,9 @@ export function getDb() {
   const pool = new Pool({ connectionString });
   
   // Extend the drizzle object with a direct query method for legacy support
-  // while ensuring it uses the same pool instance for the duration of the request
-  const db = drizzle(pool);
+  const drizzleDb = drizzle(pool);
   
-  return Object.assign(db, {
+  return Object.assign(drizzleDb, {
     async query(sqlText: string, params?: unknown[]) {
       try {
         const result = await pool.query(sqlText, params || []);
@@ -30,10 +29,8 @@ export function getDb() {
         console.error('Database query error:', error);
         throw error;
       } finally {
-        // Important: In Cloudflare Workers, we don't necessarily want to end 
-        // the pool here if the request is still active, but since this is 
-        // a per-request pool, we should ensure it's handled.
-        // The withConnection method below is safer for multiple queries.
+        // En consultas individuales cerramos el pool inmediatamente
+        await pool.end().catch(() => {});
       }
     },
     async end() {
@@ -43,14 +40,36 @@ export function getDb() {
 }
 
 /**
+ * Legacy compatibility object.
+ * Warning: This creates a new pool for every single call.
+ * For multiple queries, prefer using withDb.
+ */
+export const db = {
+  async query(sqlText: string, params?: unknown[]) {
+    const connectionString = getConnectionString();
+    const pool = new Pool({ connectionString });
+    try {
+      const result = await pool.query(sqlText, params || []);
+      return { rows: result.rows };
+    } catch (error) {
+      console.error('Database query error:', error);
+      throw error;
+    } finally {
+      await pool.end().catch(() => {});
+    }
+  }
+} as any;
+
+/**
  * Executes a callback within a single database connection.
  * Useful for transactions or multiple related queries.
  */
 export async function withDb<T>(callback: (db: ReturnType<typeof getDb>) => Promise<T>): Promise<T> {
-  const db = getDb();
+  const dbInstance = getDb();
   try {
-    return await callback(db);
+    return await callback(dbInstance);
   } finally {
-    await db.end();
+    // getDb().query already handles its own end(), but drizzle calls might not
+    await dbInstance.end();
   }
 }
