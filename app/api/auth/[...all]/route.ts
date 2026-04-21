@@ -18,8 +18,7 @@ export const POST = async (req: Request) => {
     console.error("[Auth Route POST] Error:", error);
     return new Response(JSON.stringify({ 
       error: "Internal Server Error", 
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message: error.message 
     }), { 
       status: 500,
       headers: { "Content-Type": "application/json" }
