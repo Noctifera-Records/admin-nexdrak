@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { withDb } from "@/lib/db";
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { safeRevalidate } from "@/lib/revalidate";
 
 export async function getDownloads() {
     const session = await auth.api.getSession({
@@ -60,7 +60,7 @@ export async function createDownload(data: any) {
             is_public || false
         ]);
 
-        revalidatePath("/admin/downloads");
+        safeRevalidate("/admin/downloads");
         return res.rows[0];
     });
 }
@@ -105,7 +105,7 @@ export async function updateDownload(id: number, data: any) {
             id
         ]);
 
-        revalidatePath("/admin/downloads");
+        safeRevalidate("/admin/downloads");
         return res.rows[0];
     });
 }
@@ -123,6 +123,6 @@ export async function deleteDownload(id: number) {
         await db.rawQuery("DELETE FROM downloads WHERE id = $1", [id]);
     });
     
-    revalidatePath("/admin/downloads");
+    safeRevalidate("/admin/downloads");
     return { success: true };
 }

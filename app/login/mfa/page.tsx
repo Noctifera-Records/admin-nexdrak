@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Loader2, ShieldCheck, Key } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 export default function MfaPage() {
   const [code, setCode] = useState("");
@@ -76,16 +77,25 @@ export default function MfaPage() {
               <form onSubmit={handleVerifyTotp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="code">Authentication Code</Label>
-                  <Input
+                  <InputOTP
                     id="code"
-                    placeholder="000000"
+                    maxLength={6}
                     value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    required
+                    onChange={(value) => setCode(value)}
                     autoFocus
                     autoComplete="one-time-code"
-                  />
-                  <p className="text-xs text-muted-foreground">
+                    containerClassName="justify-center"
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                  <p className="text-xs text-muted-foreground text-center">
                     Enter the 6-digit code from your authenticator app.
                   </p>
                 </div>

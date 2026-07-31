@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer, index } from "drizzle-orm/pg-core";
 
 // Tables names are quoted to match backup.sql exactly ("user", "twoFactor")
 // Columns match the casing found in the SQL dump
@@ -88,6 +88,11 @@ export const twoFactor = pgTable(
     userId: text("userId") // Mixed case column from backup.sql
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    // Columns used by Better Auth's two-factor plugin for account lockout
+    // (brute-force protection on TOTP/backup-code verification)
+    verified: boolean("verified").default(true).notNull(),
+    failedVerificationCount: integer("failedVerificationCount").default(0).notNull(),
+    lockedUntil: timestamp("lockedUntil"),
   },
   (table) => [
     index("twoFactor_secret_idx").on(table.secret),

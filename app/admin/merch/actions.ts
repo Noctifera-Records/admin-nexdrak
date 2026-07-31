@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { withDb } from "@/lib/db";
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { safeRevalidate } from "@/lib/revalidate";
 import { z } from "zod";
 
 const merchSchema = z.object({
@@ -64,7 +64,7 @@ export async function createMerch(data: unknown) {
             is_available || false
         ]);
 
-        revalidatePath("/admin/merch");
+        safeRevalidate("/admin/merch");
         return res.rows[0];
     });
 }
@@ -102,7 +102,7 @@ export async function updateMerch(id: number, data: unknown) {
             id
         ]);
 
-        revalidatePath("/admin/merch");
+        safeRevalidate("/admin/merch");
         return res.rows[0];
     });
 }
@@ -120,6 +120,6 @@ export async function deleteMerch(id: number) {
         await db.rawQuery("DELETE FROM merch WHERE id = $1", [id]);
     });
     
-    revalidatePath("/admin/merch");
+    safeRevalidate("/admin/merch");
     return { success: true };
 }

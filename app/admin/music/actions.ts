@@ -3,7 +3,7 @@
 import { getAuth } from "@/lib/auth";
 import { withDb } from "@/lib/db";
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { safeRevalidate } from "@/lib/revalidate";
 import { z } from "zod";
 
 const songSchema = z.object({
@@ -88,7 +88,7 @@ export async function createSong(data: unknown) {
             RETURNING *
         `, [title.trim(), artist.trim(), clean_album_name, clean_cover_image_url, clean_release_date, type, clean_slug, clean_stream_url, clean_youtube_embed_id, clean_track_number]);
 
-        revalidatePath("/admin/music");
+        safeRevalidate("/admin/music");
         return res.rows[0];
     });
 }
@@ -118,7 +118,7 @@ export async function updateSong(id: number, data: unknown) {
             RETURNING *
         `, [title.trim(), artist.trim(), clean_album_name, clean_cover_image_url, clean_release_date, type, clean_slug, clean_stream_url, clean_youtube_embed_id, clean_track_number, id]);
 
-        revalidatePath("/admin/music");
+        safeRevalidate("/admin/music");
         return res.rows[0];
     });
 }
@@ -127,7 +127,7 @@ export async function deleteSong(id: number) {
     await checkAdmin();
     return withDb(async (db) => {
         await db.rawQuery("DELETE FROM songs WHERE id = $1", [id]);
-        revalidatePath("/admin/music");
+        safeRevalidate("/admin/music");
         return { success: true };
     });
 }
@@ -158,12 +158,7 @@ export async function addStreamingLink(songId: number, data: unknown) {
 
             console.log("[addStreamingLink] Insert successful, ID:", res.rows[0].id);
 
-            // Cloudflare Workers workaround: avoid revalidatePath if it causes hangs
-            try {
-                revalidatePath("/admin/music");
-            } catch (e) {
-                console.warn("[addStreamingLink] revalidatePath failed (non-critical):", e);
-            }
+            safeRevalidate("/admin/music");
             
             return res.rows[0];
         });
@@ -177,7 +172,7 @@ export async function deleteStreamingLink(id: number) {
     await checkAdmin();
     return withDb(async (db) => {
         await db.rawQuery("DELETE FROM streaming_links WHERE id = $1", [id]);
-        revalidatePath("/admin/music");
+        safeRevalidate("/admin/music");
         return { success: true };
     });
 }
@@ -194,7 +189,7 @@ export async function setPrimaryStreamingLink(id: number, songId: number) {
             RETURNING id, song_id, platform, url, is_primary
         `, [id]);
 
-        revalidatePath("/admin/music");
+        safeRevalidate("/admin/music");
         return res.rows[0];
     });
 }

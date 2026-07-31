@@ -3,7 +3,7 @@
 import { getAuth } from "@/lib/auth";
 import { withDb } from "@/lib/db";
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { safeRevalidate } from "@/lib/revalidate";
 
 export async function getSiteSettings() {
     const session = await getAuth().api.getSession({
@@ -51,8 +51,8 @@ export async function updateSiteSettings(settings: Record<string, string>) {
             }
         });
 
-        revalidatePath("/admin/settings");
-        revalidatePath("/"); // Update home page as well since it uses these settings
+        safeRevalidate("/admin/settings");
+        safeRevalidate("/"); // Update home page as well since it uses these settings
         return { success: true };
     } catch (error: any) {
         console.error("Error updating site settings:", error);

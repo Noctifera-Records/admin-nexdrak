@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { safeRevalidate } from "@/lib/revalidate";
 
 export interface AdminProfile {
   id: string;
@@ -73,7 +73,7 @@ export async function createAdmin(email: string, password: string): Promise<Admi
     throw new Error("Error creating administrator user");
   }
 
-  revalidatePath("/admin/admins");
+  safeRevalidate("/admin/admins");
 
   return {
     id: newUser.id,
@@ -100,6 +100,6 @@ export async function deleteAdmin(adminId: string): Promise<boolean> {
     headers: await headers(),
   });
 
-  revalidatePath("/admin/admins");
+  safeRevalidate("/admin/admins");
   return true;
 }

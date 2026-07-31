@@ -15,29 +15,24 @@ export async function getAdminStats() {
 
     try {
         return await withDb(async (db) => {
-            const [
-                usersCount,
-                songsCount,
-                merchCount,
-                downloadsCount,
-                eventsCount,
-                releasesCount
-            ] = await Promise.all([
-                db.rawQuery('SELECT COUNT(*) FROM "user"'),
-                db.rawQuery('SELECT COUNT(*) FROM songs'),
-                db.rawQuery('SELECT COUNT(*) FROM merch'),
-                db.rawQuery('SELECT COUNT(*) FROM downloads'),
-                db.rawQuery('SELECT COUNT(*) FROM events'),
-                db.rawQuery('SELECT COUNT(*) FROM releases')
-            ]);
+            const res = await db.rawQuery(`
+                SELECT
+                    (SELECT COUNT(*) FROM "user") AS users,
+                    (SELECT COUNT(*) FROM songs) AS songs,
+                    (SELECT COUNT(*) FROM merch) AS merch,
+                    (SELECT COUNT(*) FROM downloads) AS downloads,
+                    (SELECT COUNT(*) FROM events) AS events,
+                    (SELECT COUNT(*) FROM releases) AS releases
+            `);
 
+            const row = res.rows[0];
             return {
-                users: parseInt(usersCount.rows[0].count),
-                songs: parseInt(songsCount.rows[0].count),
-                merch: parseInt(merchCount.rows[0].count),
-                downloads: parseInt(downloadsCount.rows[0].count),
-                events: parseInt(eventsCount.rows[0].count),
-                releases: parseInt(releasesCount.rows[0].count)
+                users: parseInt(row.users),
+                songs: parseInt(row.songs),
+                merch: parseInt(row.merch),
+                downloads: parseInt(row.downloads),
+                events: parseInt(row.events),
+                releases: parseInt(row.releases)
             };
         });
     } catch (error) {

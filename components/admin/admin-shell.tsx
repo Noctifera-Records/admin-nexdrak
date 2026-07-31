@@ -9,7 +9,8 @@ import {
   Settings,
   Music,
   Calendar,
-  Package,
+  Disc,
+  ShieldCheck,
   User,
   Download,
   Menu,
@@ -55,6 +56,8 @@ export default function AdminShell({ children, user }: AdminShellProps) {
     { href: "/admin/merch", icon: ShoppingBag, label: "Merchandise" },
     { href: "/admin/downloads", icon: Download, label: "Downloads" },
     { href: "/admin/events", icon: Calendar, label: "Events" },
+    { href: "/admin/releases", icon: Disc, label: "Releases" },
+    { href: "/admin/admins", icon: ShieldCheck, label: "Admins" },
     { href: "/admin/settings", icon: Settings, label: "Settings" },
     { href: "/admin/account", icon: User, label: "Account" },
   ];
@@ -164,7 +167,7 @@ export default function AdminShell({ children, user }: AdminShellProps) {
 
         {/* Page content */}
         <main className="flex-1 bg-background text-foreground overflow-auto">
-          <div className="p-4 lg:p-8">{children}</div>
+          <div className="min-w-0 p-0">{children}</div>
         </main>
       </div>
     </div>

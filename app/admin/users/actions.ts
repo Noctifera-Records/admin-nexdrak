@@ -3,7 +3,7 @@
 import { withDb } from "@/lib/db";
 import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { safeRevalidate } from "@/lib/revalidate";
 
 export async function getUsers() {
   const session = await getAuth().api.getSession({
@@ -39,8 +39,8 @@ export async function updateUserProfile(userId: string, updates: { role?: string
     const { role, username } = updates;
     
     // Construct dynamic update query
-    const fields = [];
-    const values = [];
+    const fields: string[] = [];
+    const values: (string | number)[] = [];
     let paramIndex = 1;
 
     if (role) {
@@ -64,7 +64,7 @@ export async function updateUserProfile(userId: string, updates: { role?: string
       `, values);
     });
 
-    revalidatePath("/admin/users");
+    safeRevalidate("/admin/users");
     return { success: true };
   } catch (error: any) {
     console.error("Error updating user:", error);
@@ -92,7 +92,7 @@ export async function deleteUser(userId: string) {
       await db.rawQuery('DELETE FROM "user" WHERE id = $1', [userId]);
     });
     
-    revalidatePath("/admin/users");
+    safeRevalidate("/admin/users");
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting user:", error);

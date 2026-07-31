@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { withDb } from "@/lib/db";
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { safeRevalidate } from "@/lib/revalidate";
 import { z } from "zod";
 
 const eventSchema = z.object({
@@ -78,7 +78,7 @@ export async function createEvent(data: unknown) {
             is_published || false
         ]);
 
-        revalidatePath("/admin/events");
+        safeRevalidate("/admin/events");
         return res.rows[0];
     });
 }
@@ -128,7 +128,7 @@ export async function updateEvent(id: number, data: unknown) {
             id
         ]);
 
-        revalidatePath("/admin/events");
+        safeRevalidate("/admin/events");
         return res.rows[0];
     });
 }
@@ -146,6 +146,6 @@ export async function deleteEvent(id: number) {
         await db.rawQuery("DELETE FROM events WHERE id = $1", [id]);
     });
     
-    revalidatePath("/admin/events");
+    safeRevalidate("/admin/events");
     return { success: true };
 }

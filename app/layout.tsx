@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "NexDrak Admin",
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <ThemeToggle />
             </header>
             <main className="flex-1 p-4 max-w-6xl mx-auto w-full">{children}</main>
+            <Toaster position="top-right" richColors />
           </div>
         </ThemeProvider>
       </body>

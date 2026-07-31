@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { withDb } from "@/lib/db";
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { safeRevalidate } from "@/lib/revalidate";
 
 export async function getReleases() {
     const session = await auth.api.getSession({
@@ -45,7 +45,7 @@ export async function createRelease(data: any) {
             stream_url || null
         ]);
 
-        revalidatePath("/admin/releases");
+        safeRevalidate("/admin/releases");
         return res.rows[0];
     });
 }
@@ -75,7 +75,7 @@ export async function updateRelease(id: number, data: any) {
             id
         ]);
 
-        revalidatePath("/admin/releases");
+        safeRevalidate("/admin/releases");
         return res.rows[0];
     });
 }
@@ -93,6 +93,6 @@ export async function deleteRelease(id: number) {
         await db.rawQuery("DELETE FROM releases WHERE id = $1", [id]);
     });
     
-    revalidatePath("/admin/releases");
+    safeRevalidate("/admin/releases");
     return { success: true };
 }
