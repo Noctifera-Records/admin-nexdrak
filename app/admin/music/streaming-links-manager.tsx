@@ -71,16 +71,21 @@ export function StreamingLinksManager({ song, streamingLinks, onClose }: Streami
     setError('');
 
     try {
-      const data = await addStreamingLink(song.id, {
+      const result = await addStreamingLink(song.id, {
         platform: newLink.platform,
         url: newLink.url,
         is_primary: links.length === 0
       });
 
-      setLinks(prev => [...prev, data]);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+
+      setLinks(prev => [...prev, result.data]);
       setNewLink({ platform: '', url: '' });
     } catch (error: any) {
-      setError(error.message || 'Error adding streaming link');
+      setError(error?.message || 'Error adding streaming link');
     } finally {
       setLoading(false);
     }
@@ -93,10 +98,16 @@ export function StreamingLinksManager({ song, streamingLinks, onClose }: Streami
 
     setLoading(true);
     try {
-      await deleteStreamingLink(linkId);
+      const result = await deleteStreamingLink(linkId);
+
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+
       setLinks(prev => prev.filter(link => link.id !== linkId));
     } catch (error: any) {
-      setError(error.message || 'Error deleting streaming link');
+      setError(error?.message || 'Error deleting streaming link');
     } finally {
       setLoading(false);
     }
@@ -104,15 +115,21 @@ export function StreamingLinksManager({ song, streamingLinks, onClose }: Streami
 
   const handleSetPrimary = async (linkId: number) => {
     setLoading(true);
+    setError('');
     try {
-      await setPrimaryStreamingLink(linkId, song.id);
+      const result = await setPrimaryStreamingLink(linkId, song.id);
+
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
 
       setLinks(prev => prev.map(link => ({
         ...link,
         is_primary: link.id === linkId
       })));
     } catch (error: any) {
-      setError(error.message || 'Error setting primary link');
+      setError(error?.message || 'Error setting primary link');
     } finally {
       setLoading(false);
     }

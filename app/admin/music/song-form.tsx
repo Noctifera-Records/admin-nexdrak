@@ -20,7 +20,7 @@ interface Song {
   type: 'album' | 'single';
   album_name?: string;
   track_number?: number;
-  release_date?: string;
+  release_date?: string | Date | null;
   created_at: string;
   youtube_embed_id?: string;
   slug?: string;
@@ -29,6 +29,23 @@ interface Song {
 interface SongFormProps {
   song?: Song | null;
   onClose: () => void;
+}
+
+/**
+ * The API used to send `release_date` as a `Date` instance, which `<input
+ * type="date">` cannot display and Zod rejected on save. It may still arrive in
+ * either shape, so it is always normalised to `YYYY-MM-DD`.
+ */
+function normalizeDateInput(value?: string | Date | null): string {
+  if (!value) return '';
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? '' : value.toISOString().slice(0, 10);
+  }
+  const raw = String(value);
+  const iso = /^(\d{4}-\d{2}-\d{2})/.exec(raw);
+  if (iso) return iso[1];
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString().slice(0, 10);
 }
 
 export function SongForm({ song, onClose }: SongFormProps) {
@@ -59,7 +76,7 @@ export function SongForm({ song, onClose }: SongFormProps) {
         type: song.type,
         album_name: song.album_name || '',
         track_number: song.track_number || '',
-        release_date: song.release_date || '',
+        release_date: normalizeDateInput(song.release_date),
         youtube_embed_id: song.youtube_embed_id || '',
         slug: song.slug || ''
       });
@@ -99,17 +116,25 @@ export function SongForm({ song, onClose }: SongFormProps) {
       };
 
       if (song) {
-        await updateSong(song.id, songData);
+        const result = await updateSong(song.id, songData);
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
         toast.success('Song updated');
       } else {
-        await createSong(songData);
+        const result = await createSong(songData);
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
         toast.success('Song created');
       }
 
       onClose();
     } catch (error: any) {
       console.error('Error saving song:', error);
-      toast.error(error.message || 'Error saving song');
+      toast.error(error?.message || 'Error saving song');
     } finally {
       setLoading(false);
     }

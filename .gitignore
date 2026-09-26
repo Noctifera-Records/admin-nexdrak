@@ -33,6 +33,10 @@ temp_*
 test_*
 *.sql
 /sql
+# ...but database migrations must stay under version control.
+!/sql/
+!/sql/fix-rls-and-exposed-columns.sql
+!/sql/migration-twofactor-lockout.sql
 
 #env files
 .env*

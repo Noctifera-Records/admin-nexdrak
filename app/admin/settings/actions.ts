@@ -1,18 +1,11 @@
 "use server";
 
-import { getAuth } from "@/lib/auth";
 import { withDb } from "@/lib/db";
-import { headers } from "next/headers";
+import { getAdminSession } from "@/lib/auth-guard";
 import { safeRevalidate } from "@/lib/revalidate";
 
 export async function getSiteSettings() {
-    const session = await getAuth().api.getSession({
-        headers: await headers()
-    });
-
-    if (!session || session.user.role !== "admin") {
-        throw new Error("Unauthorized");
-    }
+    await getAdminSession();
 
     return await withDb(async (db) => {
         const res = await db.rawQuery(`
@@ -23,13 +16,7 @@ export async function getSiteSettings() {
 }
 
 export async function updateSiteSettings(settings: Record<string, string>) {
-    const session = await getAuth().api.getSession({
-        headers: await headers()
-    });
-
-    if (!session || session.user.role !== "admin") {
-        throw new Error("Unauthorized");
-    }
+    await getAdminSession();
 
     try {
         await withDb(async (db) => {

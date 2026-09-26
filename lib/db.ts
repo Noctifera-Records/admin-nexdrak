@@ -54,9 +54,14 @@ export const db = {
 } as any;
 
 /**
+ * The object returned by getDb(): a Drizzle instance plus our rawQuery helper.
+ */
+export type Db = ReturnType<typeof getDb>;
+
+/**
  * Executes a callback within a single database connection.
  */
-export async function withDb<T>(callback: (db: ReturnType<typeof getDb>) => Promise<T>): Promise<T> {
+export async function withDb<T>(callback: (db: Db) => Promise<T>): Promise<T> {
   const dbInstance = getDb();
   try {
     return await callback(dbInstance);

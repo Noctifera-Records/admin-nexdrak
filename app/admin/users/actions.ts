@@ -1,18 +1,11 @@
 "use server";
 
 import { withDb } from "@/lib/db";
-import { getAuth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getAdminSession } from "@/lib/auth-guard";
 import { safeRevalidate } from "@/lib/revalidate";
 
 export async function getUsers() {
-  const session = await getAuth().api.getSession({
-    headers: await headers()
-  });
-
-  if (!session || session.user.role !== "admin") {
-    throw new Error("Unauthorized");
-  }
+  await getAdminSession();
 
   // Fetch users from Better Auth 'user' table
   // Columns match backup.sql: created_at, email_verified
@@ -27,11 +20,11 @@ export async function getUsers() {
 }
 
 export async function updateUserProfile(userId: string, updates: { role?: string, username?: string }) {
-  const session = await getAuth().api.getSession({
-    headers: await headers()
-  });
-
-  if (!session || session.user.role !== "admin") {
+  // Keeps the original contract: this action reports problems by returning an
+  // object instead of throwing.
+  try {
+    await getAdminSession();
+  } catch {
     return { error: "Unauthorized" };
   }
 
@@ -73,11 +66,8 @@ export async function updateUserProfile(userId: string, updates: { role?: string
 }
 
 export async function deleteUser(userId: string) {
-  const session = await getAuth().api.getSession({
-    headers: await headers()
-  });
-
-  if (!session || session.user.role !== "admin") {
+  const session = await getAdminSession().catch(() => null);
+  if (!session) {
     return { error: "Unauthorized" };
   }
 

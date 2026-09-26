@@ -1,17 +1,10 @@
 'use server';
 
 import { withDb } from "@/lib/db";
-import { getAuth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getAdminSession } from "@/lib/auth-guard";
 
 export async function getAdminStats() {
-    const session = await getAuth().api.getSession({
-        headers: await headers()
-    });
-
-    if (!session || session.user.role !== "admin") {
-        throw new Error("Unauthorized");
-    }
+    await getAdminSession();
 
     try {
         return await withDb(async (db) => {

@@ -74,7 +74,13 @@ export default function AdminMusicPage() {
     }
 
     try {
-      await deleteSong(id);
+      const result = await deleteSong(id);
+
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
       setSongs(prev => prev.filter(song => song.id !== id));
       toast.success('Song deleted');
     } catch (error) {
